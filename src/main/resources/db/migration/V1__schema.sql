@@ -1,0 +1,73 @@
+CREATE TABLE app_user (
+ id UUID PRIMARY KEY, name VARCHAR(100) NOT NULL, email VARCHAR(254) NOT NULL UNIQUE,
+ password_hash VARCHAR(100) NOT NULL, role VARCHAR(20) NOT NULL CHECK (role IN ('STUDENT','INSTRUCTOR')),
+ created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE auth_token (
+ token_hash VARCHAR(64) PRIMARY KEY, user_id UUID NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+ expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+CREATE INDEX idx_token_expiry ON auth_token(expires_at);
+CREATE TABLE workshop (
+ id UUID PRIMARY KEY, title VARCHAR(150) NOT NULL, description VARCHAR(2000) NOT NULL,
+ topic VARCHAR(60) NOT NULL, difficulty VARCHAR(20) NOT NULL CHECK (difficulty IN ('BEGINNER','INTERMEDIATE')),
+ owner_id UUID REFERENCES app_user(id), published BOOLEAN NOT NULL DEFAULT TRUE
+);
+CREATE TABLE skill (id UUID PRIMARY KEY, name VARCHAR(80) NOT NULL UNIQUE);
+CREATE TABLE workshop_skill (
+ workshop_id UUID NOT NULL REFERENCES workshop(id), skill_id UUID NOT NULL REFERENCES skill(id),
+ PRIMARY KEY (workshop_id, skill_id)
+);
+CREATE TABLE scenario (
+ id UUID PRIMARY KEY, workshop_id UUID NOT NULL REFERENCES workshop(id), title VARCHAR(150) NOT NULL,
+ description VARCHAR(2000) NOT NULL, template_key VARCHAR(30) NOT NULL,
+ evidence VARCHAR(2000) NOT NULL, hint VARCHAR(1000) NOT NULL, explanation VARCHAR(2000) NOT NULL
+);
+CREATE TABLE scenario_step (
+ id UUID PRIMARY KEY, scenario_id UUID NOT NULL REFERENCES scenario(id), position INTEGER NOT NULL,
+ title VARCHAR(150) NOT NULL, UNIQUE (scenario_id, position)
+);
+CREATE TABLE scenario_action (
+ id UUID PRIMARY KEY, step_id UUID NOT NULL REFERENCES scenario_step(id), code VARCHAR(60) NOT NULL,
+ label VARCHAR(150) NOT NULL, correct BOOLEAN NOT NULL, UNIQUE (step_id, code)
+);
+CREATE TABLE attempt (
+ id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES app_user(id), scenario_id UUID NOT NULL REFERENCES scenario(id),
+ state VARCHAR(20) NOT NULL CHECK (state IN ('IN_PROGRESS','RESOLVED')), mistakes INTEGER NOT NULL DEFAULT 0,
+ hints INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL DEFAULT 0 CHECK (score BETWEEN 0 AND 100),
+ created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, completed_at TIMESTAMP WITH TIME ZONE
+);
+CREATE INDEX idx_attempt_user ON attempt(user_id, created_at);
+CREATE TABLE attempt_event (
+ id UUID PRIMARY KEY, attempt_id UUID NOT NULL REFERENCES attempt(id), request_key UUID NOT NULL,
+ action_code VARCHAR(60) NOT NULL, result_state VARCHAR(20) NOT NULL, score INTEGER NOT NULL,
+ feedback VARCHAR(2000) NOT NULL, created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE(attempt_id, request_key)
+);
+CREATE TABLE study_group (
+ id UUID PRIMARY KEY, name VARCHAR(120) NOT NULL, instructor_id UUID NOT NULL REFERENCES app_user(id)
+);
+CREATE TABLE membership (
+ group_id UUID NOT NULL REFERENCES study_group(id), user_id UUID NOT NULL REFERENCES app_user(id),
+ role VARCHAR(20) NOT NULL CHECK (role IN ('STUDENT','INSTRUCTOR')), PRIMARY KEY(group_id,user_id)
+);
+CREATE TABLE assignment (
+ id UUID PRIMARY KEY, group_id UUID NOT NULL REFERENCES study_group(id), workshop_id UUID NOT NULL REFERENCES workshop(id),
+ due_at TIMESTAMP WITH TIME ZONE NOT NULL, UNIQUE(group_id,workshop_id)
+);
+CREATE TABLE notification (
+ id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES app_user(id), message VARCHAR(1000) NOT NULL,
+ read_at TIMESTAMP WITH TIME ZONE, created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE background_job (
+ id UUID PRIMARY KEY, owner_id UUID NOT NULL REFERENCES app_user(id), kind VARCHAR(20) NOT NULL,
+ state VARCHAR(20) NOT NULL CHECK (state IN ('PENDING','RUNNING','SUCCEEDED','FAILED')),
+ payload TEXT NOT NULL, result TEXT, attempts INTEGER NOT NULL DEFAULT 0, error VARCHAR(200),
+ created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_job_queue ON background_job(state, created_at);
+CREATE TABLE material (
+ id UUID PRIMARY KEY, workshop_id UUID NOT NULL REFERENCES workshop(id), filename VARCHAR(120) NOT NULL,
+ object_key VARCHAR(300) NOT NULL UNIQUE
+);
