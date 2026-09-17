@@ -24,6 +24,7 @@ server:
   error:
     include-message: never
 management:
+  health.mail.enabled: ${MAIL_ENABLED:false}
   endpoints.web.exposure.include: health,info
   endpoint.health.show-details: never
 app:

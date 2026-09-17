@@ -33,6 +33,7 @@ public class AuthService {
         return new Actor(id,r.name().trim(),email,"STUDENT");
     }
     public Session login(Login r) {
+        validatePassword(r.password());
         var users=db.jdbc.queryForList("SELECT * FROM app_user WHERE email=?",r.email().trim().toLowerCase(Locale.ROOT));
         String hash=users.isEmpty()?dummyHash:users.getFirst().get("password_hash").toString();
         if (!passwords.matches(r.password(),hash) || users.isEmpty()) throw new ApiException(401,"Credenciales inválidas");
