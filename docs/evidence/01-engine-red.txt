@@ -1,0 +1,44 @@
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.SimulationEngineTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 1, Errors: 3, Skipped: 0, Time elapsed: 0.511 s <<< FAILURE! -- in edu.deploylab.SimulationEngineTest
+edu.deploylab.SimulationEngineTest.completedAttemptCannotBeModified -- Time elapsed: 0.401 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual throwable to be an instance of:
+  java.lang.IllegalStateException
+but was:
+  java.lang.UnsupportedOperationException: Motor pendiente de implementar
+	at edu.deploylab.SimulationEngine.apply(SimulationEngine.java:9)
+	at edu.deploylab.SimulationEngineTest.lambda$completedAttemptCannotBeModified$0(SimulationEngineTest.java:23)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:63)
+	...(79 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+	at edu.deploylab.SimulationEngineTest.completedAttemptCannotBeModified(SimulationEngineTest.java:24)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+edu.deploylab.SimulationEngineTest.correctActionResolvesIncidentWithFullScore -- Time elapsed: 0.005 s <<< ERROR!
+java.lang.UnsupportedOperationException: Motor pendiente de implementar
+	at edu.deploylab.SimulationEngine.apply(SimulationEngine.java:9)
+	at edu.deploylab.SimulationEngineTest.correctActionResolvesIncidentWithFullScore(SimulationEngineTest.java:9)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+edu.deploylab.SimulationEngineTest.hintsAndMistakesReduceScoreButNeverBelowZero -- Time elapsed: 0.004 s <<< ERROR!
+java.lang.UnsupportedOperationException: Motor pendiente de implementar
+	at edu.deploylab.SimulationEngine.apply(SimulationEngine.java:9)
+	at edu.deploylab.SimulationEngineTest.hintsAndMistakesReduceScoreButNeverBelowZero(SimulationEngineTest.java:19)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+edu.deploylab.SimulationEngineTest.wrongActionKeepsIncidentOpen -- Time elapsed: 0.005 s <<< ERROR!
+java.lang.UnsupportedOperationException: Motor pendiente de implementar
+	at edu.deploylab.SimulationEngine.apply(SimulationEngine.java:9)
+	at edu.deploylab.SimulationEngineTest.wrongActionKeepsIncidentOpen(SimulationEngineTest.java:14)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
