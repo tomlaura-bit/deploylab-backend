@@ -1,0 +1,16 @@
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.ApiIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 18, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 18.26 s <<< FAILURE! -- in edu.deploylab.ApiIntegrationTest
+edu.deploylab.ApiIntegrationTest.publicHealthAndDocumentationAreAvailable -- Time elapsed: 1.914 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<200> but was:<503>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at edu.deploylab.ApiIntegrationTest.perform(ApiIntegrationTest.java:29)
+	at edu.deploylab.ApiIntegrationTest.publicHealthAndDocumentationAreAvailable(ApiIntegrationTest.java:57)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
