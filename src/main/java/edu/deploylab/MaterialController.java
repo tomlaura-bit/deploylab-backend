@@ -7,6 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController @RequestMapping("/api/workshops/{workshop}/materials")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
 public class MaterialController {
     public record Upload(@NotBlank @Pattern(regexp="[a-zA-Z0-9_-]{1,100}\\.pdf") String filename) {}
     private final Db db;private final CatalogService catalog;private final S3Storage storage;

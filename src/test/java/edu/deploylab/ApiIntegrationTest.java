@@ -91,7 +91,9 @@ class ApiIntegrationTest {
             UUID id=start(u,t.key());
             var result=action(u,id,t.correctAction(),UUID.randomUUID(),200);
             assertThat(result.get("result_state").asText()).isEqualTo("RESOLVED");
-            assertThat(result.get("score").asInt()).isEqualTo(100);
+            assertThat(result.get("score").asInt()).isZero();
+            var evaluation=perform(as(post("/api/attempts/{id}/finish",id),u),200);
+            assertThat(evaluation.get("score").asInt()).isEqualTo(100);
             var detail=perform(as(get("/api/attempts/{id}",id),u),200);
             assertThat(detail.get("explanation").asText()).isNotBlank();
         }
@@ -103,11 +105,13 @@ class ApiIntegrationTest {
         action(u,id,"RESTART",UUID.randomUUID(),200);
         perform(as(post("/api/attempts/{id}/hint",id),u),200);perform(as(post("/api/attempts/{id}/hint",id),u),200);
         var result=action(u,id,"FIX_URL",UUID.randomUUID(),200);
-        assertThat(result.get("score").asInt()).isEqualTo(85);
+        assertThat(result.get("score").asInt()).isZero();
+        assertThat(perform(as(post("/api/attempts/{id}/finish",id),u),200).get("score").asInt()).isEqualTo(85);
         assertThat(db.one("SELECT hints,mistakes FROM attempt WHERE id=?",id)).containsEntry("hints",1).containsEntry("mistakes",1);
     }
     @Test void solvingApiScenarioDoesNotAwardDatabaseOrAuthorizationProgress() throws Exception {
         User u=student();UUID id=start(u,"API_URL");action(u,id,"FIX_URL",UUID.randomUUID(),200);
+        perform(as(post("/api/attempts/{id}/finish",id),u),200);
         var progress=perform(as(get("/api/progress"),u),200);
         for(var skill:progress) {
             int expected=skill.get("name").asText().equals("Diagnóstico de APIs")?1:0;
@@ -172,6 +176,7 @@ class ApiIntegrationTest {
         perform(as(patch("/api/notifications/{id}/read",notification),outsider),404);
         perform(as(patch("/api/notifications/{id}/read",notification),s),204);
         UUID a=start(s,"API_URL");action(s,a,"FIX_URL",UUID.randomUUID(),200);
+        perform(as(post("/api/attempts/{id}/finish",a),s),200);
         var stats=perform(as(get("/api/groups/{id}/statistics",g),t),200);
         assertThat(stats.get(0).get("resolved").asInt()).isEqualTo(1);
         perform(as(get("/api/groups/{id}/statistics",g),s),403);
@@ -182,6 +187,7 @@ class ApiIntegrationTest {
     }
     @Test void reportIsAsynchronousAndPrivate() throws Exception {
         User s=student(),other=student();UUID a=start(s,"DB_AUTH");action(s,a,"FIX_CREDENTIALS",UUID.randomUUID(),200);
+        perform(as(post("/api/attempts/{id}/finish",a),s),200);
         var report=perform(as(post("/api/reports"),s),202);String id=report.get("id").asText();
         perform(as(get("/api/jobs/{id}/download",id),s),409);
         perform(as(get("/api/jobs/{id}",id),other),404);worker.tick();

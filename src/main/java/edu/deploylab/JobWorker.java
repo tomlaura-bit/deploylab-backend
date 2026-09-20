@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
 public class JobWorker {
     private final Db db; private final JavaMailSender mail;
     @Value("${app.mail-enabled}") boolean mailEnabled;

@@ -4,6 +4,7 @@ spring:
     username: ${TEST_DB_USER:sa}
     password: ${TEST_DB_PASSWORD:}
 app:
+  extras-enabled: true
   instructor-email: teacher@deploylab.test
   instructor-password: TestingOnly123!
   jobs-delay: 3600000

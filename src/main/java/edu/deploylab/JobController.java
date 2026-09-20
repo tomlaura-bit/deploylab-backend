@@ -6,6 +6,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController @RequestMapping("/api")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
 public class JobController {
     private final JobService jobs;private final Db db;
     public JobController(JobService jobs,Db db) {this.jobs=jobs;this.db=db;}

@@ -38,7 +38,8 @@ public class CatalogService {
     }
     public Map<String,Object> workshop(UUID id) {
         var w=db.one("SELECT * FROM workshop WHERE id=? AND published=TRUE",id);
-        w.put("scenarios",db.jdbc.queryForList("SELECT id,title,description FROM scenario WHERE workshop_id=? ORDER BY title",id));
+        w.put("scenarios",db.jdbc.queryForList("SELECT id FROM scenario WHERE workshop_id=? ORDER BY title",id)
+            .stream().map(row->scenario(Db.id(row,"id"))).toList());
         w.put("skills",db.jdbc.queryForList("SELECT s.* FROM skill s JOIN workshop_skill ws ON ws.skill_id=s.id WHERE ws.workshop_id=?",id));
         return w;
     }

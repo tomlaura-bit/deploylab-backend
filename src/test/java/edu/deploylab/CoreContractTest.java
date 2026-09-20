@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.assertj.core.api.Assertions.*;
 
 /** Acceptance tests for the seven routes listed in the professor's feedback. */
-@SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
+@SpringBootTest(properties="app.extras-enabled=false") @AutoConfigureMockMvc @ActiveProfiles("test")
 class CoreContractTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
@@ -89,5 +89,22 @@ class CoreContractTest {
             for(var r:results) assertThat(r.get(10,TimeUnit.SECONDS)).isEqualTo(first);
         }
         assertThat(db.jdbc.queryForObject("SELECT COUNT(*) FROM attempt_evaluation WHERE attempt_id=?",Integer.class,UUID.fromString(id))).isEqualTo(1);
+    }
+    @Test void optionalModulesAreDisabledAndSwaggerListsExactlySevenCoreOperations() throws Exception {
+        String token=user();
+        call("GET","/api/groups",null,token,404,null);
+        call("GET","/api/notifications",null,token,404,null);
+        var docs=call("GET","/v3/api-docs/core",null,null,200,null);
+        assertThat(docs.get("paths").size()).isEqualTo(7);
+    }
+    @Test void retriesDoNotChangeMistakesAndInvalidActionsCreateNoEvents() throws Exception {
+        String token=user(),id=start(token),key=UUID.randomUUID().toString();
+        act(token,id,"FIX_ROLE",key,400);
+        var first=act(token,id,"RESTART",key,200);
+        assertThat(act(token,id,"RESTART",key,200)).isEqualTo(first);
+        act(token,id,"FIX_URL",key,409);
+        var result=finish(token,id,200);
+        assertThat(result.get("evaluation").get("mistakes").asInt()).isEqualTo(1);
+        assertThat(result.get("events").size()).isEqualTo(1);
     }
 }

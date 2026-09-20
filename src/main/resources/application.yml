@@ -28,6 +28,7 @@ management:
   endpoints.web.exposure.include: health,info
   endpoint.health.show-details: never
 app:
+  extras-enabled: ${EXTRAS_ENABLED:false}
   cors-origin: ${CORS_ORIGIN:http://localhost:5173}
   instructor-email: ${INSTRUCTOR_EMAIL:}
   instructor-password: ${INSTRUCTOR_PASSWORD:}

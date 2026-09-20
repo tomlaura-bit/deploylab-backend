@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.CoreContractTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.972 s -- in edu.deploylab.CoreContractTest

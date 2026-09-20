@@ -6,6 +6,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController @RequestMapping("/api/groups")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
 public class GroupController {
     private final GroupService groups; private final JobService jobs;
     public GroupController(GroupService groups,JobService jobs) {this.groups=groups;this.jobs=jobs;}

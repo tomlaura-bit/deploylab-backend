@@ -7,6 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController @RequestMapping("/api")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
 public class AttemptController {
     public record Start(@NotNull UUID scenarioId) {}
     public record Action(@NotBlank @Size(max=60) String code) {}
@@ -19,5 +20,6 @@ public class AttemptController {
     @PostMapping("/attempts/{id}/actions") public Object action(@PathVariable UUID id,@AuthenticationPrincipal AuthService.Actor user,
         @RequestHeader("Idempotency-Key") UUID key,@Valid @RequestBody Action body) {return attempts.action(id,user,key,body.code());}
     @PostMapping("/attempts/{id}/hint") public Object hint(@PathVariable UUID id,@AuthenticationPrincipal AuthService.Actor user) {return attempts.hint(id,user);}
+    @PostMapping("/attempts/{id}/finish") public Object finish(@PathVariable UUID id,@AuthenticationPrincipal AuthService.Actor user) {return attempts.finish(id,user);}
     @GetMapping("/progress") public Object progress(@AuthenticationPrincipal AuthService.Actor user) {return attempts.progress(user);}
 }
