@@ -1,0 +1,13 @@
+1. Registro y autenticación
+OK: rechazo esperado HTTP 401
+OK: rechazo esperado HTTP 401
+2. Catálogo y detalle del taller
+3. Inicio del intento; rechazar una entrega sin acciones
+OK: rechazo esperado HTTP 409
+OK: rechazo esperado HTTP 400
+4. Acción incorrecta: evento guardado e incidente abierto
+5. Incidente resuelto; repetir petición devuelve el mismo evento
+6. Finalizar: guardar nota e historial
+OK: rechazo esperado HTTP 409
+7. Entregar un intento sin resolver produce cero puntos
+DEMOSTRACIÓN EXITOSA: siete endpoints, nota 90/100, intento fallido 0/100, historial e idempotencia.

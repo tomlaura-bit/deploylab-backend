@@ -57,6 +57,7 @@ try {
     $env:INSTRUCTOR_PASSWORD = $config.instructorPassword
     $env:PORT = "$ApiPort"
     $env:MAIL_ENABLED = 'false'
+    $env:EXTRAS_ENABLED = 'false'
     $jarPath = Join-Path $projectRoot 'target/deploylab-backend-1.0.0.jar'
     $javaPath = (Get-Command java.exe -ErrorAction Stop).Source
     $process = Start-Process -FilePath $javaPath -ArgumentList @('-jar', ('"' + $jarPath + '"'), '--server.address=127.0.0.1') -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $dataDir 'api.log') -RedirectStandardError (Join-Path $dataDir 'api-error.log')
@@ -72,7 +73,7 @@ try {
     if (-not $ready) { throw 'La API no inició. Revisa data/api.log y data/api-error.log.' }
     Write-Host "Backend iniciado: http://localhost:$ApiPort/swagger-ui/index.html"
     Write-Host 'Credenciales de instructor: data/local-config.json (archivo local excluido de Git).'
-    Write-Host "Prueba: ./scripts/Demo.ps1 -BaseUrl http://localhost:$ApiPort"
+    Write-Host "Prueba: ./scripts/Demo.ps1 -BaseUrl http://127.0.0.1:$ApiPort"
 } finally {
     Pop-Location
     Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue

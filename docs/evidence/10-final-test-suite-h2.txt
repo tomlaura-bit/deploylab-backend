@@ -1,0 +1,24 @@
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.ApiIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 21.15 s -- in edu.deploylab.ApiIntegrationTest
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.CoreContractTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.270 s -- in edu.deploylab.CoreContractTest
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.CsvTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in edu.deploylab.CsvTest
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.ExternalIntegrationsTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.869 s -- in edu.deploylab.ExternalIntegrationsTest
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.SimulationEngineTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s -- in edu.deploylab.SimulationEngineTest
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.TransactionRollbackTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.895 s -- in edu.deploylab.TransactionRollbackTest

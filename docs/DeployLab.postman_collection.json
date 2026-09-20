@@ -1,0 +1,526 @@
+{
+  "info": {
+    "name": "DeployLab Core aprobado",
+    "description": "Ejecutar en orden. Siete endpoints principales y errores esperados. No requiere módulos secundarios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Registrar alumno",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Alumno Demo\", \"email\": \"{{email}}\", \"password\": \"DemoCore123!\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+            ]
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"email\", \"demo-\" + Date.now() + \"@example.test\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Rechazar email duplicado",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Alumno Demo\", \"email\": \"{{email}}\", \"password\": \"DemoCore123!\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/login",
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{email}}\", \"password\": \"DemoCore123!\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set(\"token\", pm.response.json().token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Rechazar contraseña incorrecta",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/login",
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{email}}\", \"password\": \"Incorrecta123!\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Rechazar catálogo sin token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/talleres",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Catálogo",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/talleres"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Hay talleres\", () => pm.expect(pm.response.json().length).to.be.above(0));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Detalle del taller",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/talleres/10000000-0000-0000-0000-000000000001"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const s = pm.response.json().scenarios.find(s => s.title === \"API mal configurada\");",
+              "pm.collectionVariables.set(\"scenarioId\", s.id);",
+              "pm.test(\"Acciones sin solución\", () => pm.expect(s.actions[0]).not.to.have.property(\"correct\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Iniciar intento",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/escenarios/{{scenarioId}}/intentos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"attemptId\", pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Rechazar finalización vacía",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/intentos/{{attemptId}}/finalizar"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Rechazar acción no disponible",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          }
+        ],
+        "url": "{{baseUrl}}/intentos/{{attemptId}}/acciones",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\": \"FIX_ROLE\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Acción incorrecta permitida",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          }
+        ],
+        "url": "{{baseUrl}}/intentos/{{attemptId}}/acciones",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\": \"RESTART\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Continúa abierto\", () => pm.expect(pm.response.json().result_state).to.eql(\"IN_PROGRESS\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Resolver incidente",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{actionKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/intentos/{{attemptId}}/acciones",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\": \"FIX_URL\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set(\"eventId\", pm.response.json().id);",
+              "pm.test(\"Evaluación pendiente\", () => pm.expect(pm.response.json().score).to.eql(0));"
+            ]
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"actionKey\", pm.variables.replaceIn(\"{{$guid}}\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 Repetir misma acción y clave",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{actionKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/intentos/{{attemptId}}/acciones",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\": \"FIX_URL\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Mismo evento\", () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"eventId\")));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 Finalizar y evaluar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/intentos/{{attemptId}}/finalizar"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set(\"evaluationDate\", r.evaluation.evaluated_at);",
+              "pm.test(\"Nota 90 e historial de dos eventos\", () => { pm.expect(r.score).to.eql(90); pm.expect(r.events.length).to.eql(2); pm.expect(r.finalized).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 Finalizar nuevamente sin duplicar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/intentos/{{attemptId}}/finalizar"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Misma evaluación\", () => pm.expect(pm.response.json().evaluation.evaluated_at).to.eql(pm.collectionVariables.get(\"evaluationDate\")));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 Rechazar acción posterior al cierre",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          }
+        ],
+        "url": "{{baseUrl}}/intentos/{{attemptId}}/acciones",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\": \"RESTART\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
