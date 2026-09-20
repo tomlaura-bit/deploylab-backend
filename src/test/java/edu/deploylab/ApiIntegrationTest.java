@@ -43,7 +43,7 @@ class ApiIntegrationTest {
         var l=perform(body(post("/api/auth/login"),Map.of("email","teacher@deploylab.test","password","TestingOnly123!")),200);
         return new User(l.get("token").asText(),UUID.fromString(l.get("user").get("id").asText()));
     }
-    UUID scenario(String key) {return Db.id(db.one("SELECT id FROM scenario WHERE template_key=? ORDER BY id LIMIT 1",key),"id");}
+    UUID scenario(String key) {return Db.id(db.one("SELECT id FROM scenario WHERE template_key=? AND workshop_id=?",key,UUID.fromString("10000000-0000-0000-0000-000000000001")),"id");}
     UUID start(User u,String template) throws Exception {
         return UUID.fromString(perform(as(body(post("/api/attempts"),Map.of("scenarioId",scenario(template))),u),201).get("id").asText());
     }
@@ -105,6 +105,14 @@ class ApiIntegrationTest {
         var result=action(u,id,"FIX_URL",UUID.randomUUID(),200);
         assertThat(result.get("score").asInt()).isEqualTo(85);
         assertThat(db.one("SELECT hints,mistakes FROM attempt WHERE id=?",id)).containsEntry("hints",1).containsEntry("mistakes",1);
+    }
+    @Test void solvingApiScenarioDoesNotAwardDatabaseOrAuthorizationProgress() throws Exception {
+        User u=student();UUID id=start(u,"API_URL");action(u,id,"FIX_URL",UUID.randomUUID(),200);
+        var progress=perform(as(get("/api/progress"),u),200);
+        for(var skill:progress) {
+            int expected=skill.get("name").asText().equals("Diagnóstico de APIs")?1:0;
+            assertThat(skill.get("resolved_attempts").asInt()).isEqualTo(expected);
+        }
     }
     @Test void invalidActionDoesNotMutateAttemptAndNeedsIdempotencyKey() throws Exception {
         User u=student();UUID id=start(u,"API_URL");

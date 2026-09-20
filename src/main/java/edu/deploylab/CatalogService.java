@@ -60,12 +60,12 @@ public class CatalogService {
     }
     void addScenario(UUID workshopId,Template t) {
         UUID sid=UUID.randomUUID(),step=UUID.randomUUID();
-        db.jdbc.update("INSERT INTO scenario(id,workshop_id,title,description,template_key,evidence,hint,explanation) VALUES (?,?,?,?,?,?,?,?)",
-            sid,workshopId,t.title(),t.description(),t.key(),t.evidence(),t.hint(),t.explanation());
+        UUID skill=Db.id(db.one("SELECT id FROM skill WHERE name=?",t.skill()),"id");
+        db.jdbc.update("INSERT INTO scenario(id,workshop_id,title,description,template_key,evidence,hint,explanation,skill_id) VALUES (?,?,?,?,?,?,?,?,?)",
+            sid,workshopId,t.title(),t.description(),t.key(),t.evidence(),t.hint(),t.explanation(),skill);
         db.jdbc.update("INSERT INTO scenario_step(id,scenario_id,position,title) VALUES (?,?,1,'Diagnosticar y corregir')",step,sid);
         db.jdbc.update("INSERT INTO scenario_action(id,step_id,code,label,correct) VALUES (?,?,?,?,TRUE)",UUID.randomUUID(),step,t.correctAction(),t.correctLabel());
         db.jdbc.update("INSERT INTO scenario_action(id,step_id,code,label,correct) VALUES (?,?,?,?,FALSE)",UUID.randomUUID(),step,t.wrongAction(),t.wrongLabel());
-        UUID skill=Db.id(db.one("SELECT id FROM skill WHERE name=?",t.skill()),"id");
         db.jdbc.update("INSERT INTO workshop_skill(workshop_id,skill_id) VALUES (?,?)",workshopId,skill);
     }
     public void requireOwner(UUID workshop,AuthService.Actor actor) {

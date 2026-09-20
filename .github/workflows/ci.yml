@@ -1,0 +1,37 @@
+name: Backend tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: deploylab_test
+          POSTGRES_USER: deploylab
+          POSTGRES_PASSWORD: test_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U deploylab -d deploylab_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: chmod +x mvnw
+      - name: Test against PostgreSQL
+        run: ./mvnw -B verify
+        env:
+          TEST_DB_URL: jdbc:postgresql://localhost:5432/deploylab_test
+          TEST_DB_USER: deploylab
+          TEST_DB_PASSWORD: test_password
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            target/surefire-reports/
+            target/site/jacoco/

@@ -52,6 +52,6 @@ public class AttemptService {
         return db.one("SELECT hint FROM scenario WHERE id=?",a.get("scenario_id"));
     }
     public Object progress(AuthService.Actor user) {
-        return db.jdbc.queryForList("SELECT s.id,s.name,COUNT(a.id) AS resolved_attempts,COALESCE(MAX(a.score),0) AS best_score FROM skill s JOIN workshop_skill ws ON ws.skill_id=s.id JOIN scenario sc ON sc.workshop_id=ws.workshop_id LEFT JOIN attempt a ON a.scenario_id=sc.id AND a.user_id=? AND a.state='RESOLVED' GROUP BY s.id,s.name ORDER BY s.name",user.id());
+        return db.jdbc.queryForList("SELECT s.id,s.name,COUNT(a.id) AS resolved_attempts,COALESCE(MAX(a.score),0) AS best_score FROM skill s JOIN scenario sc ON sc.skill_id=s.id LEFT JOIN attempt a ON a.scenario_id=sc.id AND a.user_id=? AND a.state='RESOLVED' GROUP BY s.id,s.name ORDER BY s.name",user.id());
     }
 }

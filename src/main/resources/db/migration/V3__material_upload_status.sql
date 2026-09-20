@@ -1,0 +1,2 @@
+ALTER TABLE material ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'PENDING';
+ALTER TABLE material ADD CONSTRAINT material_status_check CHECK (status IN ('PENDING','READY'));
