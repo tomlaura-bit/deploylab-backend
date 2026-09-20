@@ -1,0 +1,56 @@
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.CoreContractTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 12.68 s <<< FAILURE! -- in edu.deploylab.CoreContractTest
+edu.deploylab.CoreContractTest.concurrentFinalizationCreatesOneEvaluation -- Time elapsed: 1.433 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<201> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at edu.deploylab.CoreContractTest.call(CoreContractTest.java:29)
+	at edu.deploylab.CoreContractTest.user(CoreContractTest.java:34)
+	at edu.deploylab.CoreContractTest.concurrentFinalizationCreatesOneEvaluation(CoreContractTest.java:84)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+edu.deploylab.CoreContractTest.unsuccessfulAttemptCanBeFinalizedWithZeroScoreAndCannotChange -- Time elapsed: 0.020 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<201> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at edu.deploylab.CoreContractTest.call(CoreContractTest.java:29)
+	at edu.deploylab.CoreContractTest.user(CoreContractTest.java:34)
+	at edu.deploylab.CoreContractTest.unsuccessfulAttemptCanBeFinalizedWithZeroScoreAndCannotChange(CoreContractTest.java:69)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+edu.deploylab.CoreContractTest.sevenRoutesCompleteSuccessWithEvaluationOnlyAtFinalization -- Time elapsed: 0.016 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<201> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at edu.deploylab.CoreContractTest.call(CoreContractTest.java:29)
+	at edu.deploylab.CoreContractTest.user(CoreContractTest.java:34)
+	at edu.deploylab.CoreContractTest.sevenRoutesCompleteSuccessWithEvaluationOnlyAtFinalization(CoreContractTest.java:55)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+edu.deploylab.CoreContractTest.emptyAttemptAndOtherOwnersAreRejected -- Time elapsed: 0.017 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<201> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at edu.deploylab.CoreContractTest.call(CoreContractTest.java:29)
+	at edu.deploylab.CoreContractTest.user(CoreContractTest.java:34)
+	at edu.deploylab.CoreContractTest.emptyAttemptAndOtherOwnersAreRejected(CoreContractTest.java:77)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
