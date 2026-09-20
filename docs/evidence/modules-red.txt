@@ -1,0 +1,26 @@
+-------------------------------------------------------------------------------
+Test set: edu.deploylab.ExpandedModulesTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 15.40 s <<< FAILURE! -- in edu.deploylab.ExpandedModulesTest
+edu.deploylab.ExpandedModulesTest.teacherCanManagePublicationAndLocalPdf -- Time elapsed: 2.041 s <<< FAILURE!
+java.lang.AssertionError: Response status expected:<201> but was:<404>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$is$1(StatusResultMatchers.java:65)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at edu.deploylab.ApiIntegrationTest.perform(ApiIntegrationTest.java:29)
+	at edu.deploylab.ExpandedModulesTest.teacherCanManagePublicationAndLocalPdf(ExpandedModulesTest.java:33)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+edu.deploylab.ExpandedModulesTest.assignedWorkIsExplicitAndPersonalPracticeStaysPrivate -- Time elapsed: 0.783 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 0
+ but was: 1
+	at edu.deploylab.ExpandedModulesTest.assignedWorkIsExplicitAndPersonalPracticeStaysPrivate(ExpandedModulesTest.java:17)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
