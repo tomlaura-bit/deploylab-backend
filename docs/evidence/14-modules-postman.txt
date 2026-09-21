@@ -1,0 +1,96 @@
+(node:6624) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+newman
+
+DeployLab Core aprobado
+
+→ 01 Registrar alumno
+  POST http://127.0.0.1:8080/auth/register [201 Created, 553B, 222ms]
+  √  HTTP 201
+
+→ 02 Rechazar email duplicado
+  POST http://127.0.0.1:8080/auth/register [409 Conflict, 508B, 193ms]
+  √  HTTP 409
+
+→ 03 Login
+  POST http://127.0.0.1:8080/login [200 OK, 656B, 106ms]
+  √  HTTP 200
+
+→ 04 Rechazar contraseña incorrecta
+  POST http://127.0.0.1:8080/login [401 Unauthorized, 483B, 93ms]
+  √  HTTP 401
+
+→ 05 Rechazar catálogo sin token
+  GET http://127.0.0.1:8080/talleres [401 Unauthorized, 490B, 11ms]
+  √  HTTP 401
+
+→ 06 Catálogo
+  GET http://127.0.0.1:8080/talleres [200 OK, 895B, 11ms]
+  √  HTTP 200
+  √  Hay talleres
+
+→ 07 Detalle del taller
+  GET http://127.0.0.1:8080/talleres/10000000-0000-0000-0000-000000000001 [200 OK, 2.21kB, 21ms]
+  √  HTTP 200
+  √  Acciones sin solución
+
+→ 08 Iniciar intento
+  POST http://127.0.0.1:8080/escenarios/06bfee6c-2e62-414f-b028-43e3ddcce4e7/intentos [201 Created, 473B, 17ms]
+  √  HTTP 201
+
+→ 09 Rechazar finalización vacía
+  POST http://127.0.0.1:8080/intentos/b6dd1074-2fab-4c52-bd4e-26bf65b92568/finalizar [409 Conflict, 504B, 17ms]
+  √  HTTP 409
+
+→ 10 Rechazar acción no disponible
+  POST http://127.0.0.1:8080/intentos/b6dd1074-2fab-4c52-bd4e-26bf65b92568/acciones [400 Bad Request, 471B, 25ms]
+  √  HTTP 400
+
+→ 11 Acción incorrecta permitida
+  POST http://127.0.0.1:8080/intentos/b6dd1074-2fab-4c52-bd4e-26bf65b92568/acciones [200 OK, 799B, 28ms]
+  √  HTTP 200
+  √  Continúa abierto
+
+→ 12 Resolver incidente
+  POST http://127.0.0.1:8080/intentos/b6dd1074-2fab-4c52-bd4e-26bf65b92568/acciones [200 OK, 776B, 22ms]
+  √  HTTP 200
+  √  Evaluación pendiente
+
+→ 13 Repetir misma acción y clave
+  POST http://127.0.0.1:8080/intentos/b6dd1074-2fab-4c52-bd4e-26bf65b92568/acciones [200 OK, 776B, 11ms]
+  √  HTTP 200
+  √  Mismo evento
+
+→ 14 Finalizar y evaluar
+  POST http://127.0.0.1:8080/intentos/b6dd1074-2fab-4c52-bd4e-26bf65b92568/finalizar [200 OK, 1.72kB, 22ms]
+  √  HTTP 200
+  √  Nota 90 e historial de dos eventos
+
+→ 15 Finalizar nuevamente sin duplicar
+  POST http://127.0.0.1:8080/intentos/b6dd1074-2fab-4c52-bd4e-26bf65b92568/finalizar [200 OK, 1.72kB, 18ms]
+  √  HTTP 200
+  √  Misma evaluación
+
+→ 16 Rechazar acción posterior al cierre
+  POST http://127.0.0.1:8080/intentos/b6dd1074-2fab-4c52-bd4e-26bf65b92568/acciones [409 Conflict, 484B, 14ms]
+  √  HTTP 409
+
+┌─────────────────────────┬───────────────────┬───────────────────┐
+│                         │          executed │            failed │
+├─────────────────────────┼───────────────────┼───────────────────┤
+│              iterations │                 1 │                 0 │
+├─────────────────────────┼───────────────────┼───────────────────┤
+│                requests │                16 │                 0 │
+├─────────────────────────┼───────────────────┼───────────────────┤
+│            test-scripts │                16 │                 0 │
+├─────────────────────────┼───────────────────┼───────────────────┤
+│      prerequest-scripts │                 2 │                 0 │
+├─────────────────────────┼───────────────────┼───────────────────┤
+│              assertions │                23 │                 0 │
+├─────────────────────────┴───────────────────┴───────────────────┤
+│ total run duration: 2.3s                                        │
+├─────────────────────────────────────────────────────────────────┤
+│ total data received: 6.71kB (approx)                            │
+├─────────────────────────────────────────────────────────────────┤
+│ average response time: 51ms [min: 11ms, max: 222ms, s.d.: 64ms] │
+└─────────────────────────────────────────────────────────────────┘

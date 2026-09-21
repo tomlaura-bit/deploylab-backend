@@ -7,6 +7,9 @@
 3. Ejecutar `./mvnw.cmd '-Dtest=CoreContractTest,SimulationEngineTest,TransactionRollbackTest' test`. Una prueba de rechazo pasa cuando obtiene el error esperado; un reporte histórico RED documenta una prueba que realmente falló al desarrollar.
 4. Iniciar `./scripts/Start-Local.ps1` y ejecutar `./scripts/Demo.ps1`, o importar la colección Postman y recorrerla en orden.
 5. Mostrar nota 90 tras una acción incorrecta y una correcta, los dos eventos y la fecha de evaluación. Repetir finalizar y mostrar que no cambia. Mostrar también la entrega sin resolver con cero puntos.
+6. Mostrar `5152675` y `docs/evidence/modules-red.txt`: dos pruebas realmente fallidas antes de ampliar módulos. Ejecutar `./mvnw.cmd '-Dtest=ExpandedModulesTest' test` para ver el comportamiento corregido.
+7. Ejecutar `./scripts/Demo-Modules.ps1`. Repite el núcleo y demuestra publicación de taller, PDF local, grupo, alta por correo, asignación, entrega, revisión, estadísticas, reporte CSV, avisos, cancelación y archivado.
+8. Abrir Swagger y seleccionar `modules`. Usar el instructor local para revisar grupos y talleres. Explicar que una práctica personal no cuenta como entrega de un grupo.
 
 ## Código que conviene explicar
 
@@ -17,6 +20,11 @@
 - Migraciones V4 y V5: evaluaciones explícitas y orden persistido de eventos.
 - `TransactionRollbackTest`: evento demasiado largo provoca error en la base y revierte la actualización del estado.
 - `CoreContractTest`: siete rutas, errores, concurrencia, idempotencia y módulos secundarios apagados.
+- `AssignmentService`: permisos, fecha límite, asociación explícita del intento y revisión de entregas finalizadas.
+- `InstructorController`, `GroupService` y `DashboardController`: publicación, archivado, membresías y seguimiento por rol.
+- `MaterialController`: almacenamiento de PDF en PostgreSQL, descarga autenticada y retiro; S3 es opcional.
+- Migración V6: relación de asignaciones con intentos, estados de gestión y PDF local.
+- `ExpandedModulesTest`: privacidad entre prácticas y entregas, PDF, publicación, plazos, archivado, trabajos y notificaciones.
 
 ## Aceptación
 
@@ -48,3 +56,5 @@ git clone DeployLab_Backend_Historial.bundle deploylab-con-historial
 ```
 
 El núcleo no depende de SMTP, AWS ni módulos secundarios. La atribución de los commits permanece como Codex y las fechas corresponden a ejecuciones reales.
+
+Los módulos ampliados están activos por defecto; `Start-Local.ps1 -CoreOnly` permite demostrar el núcleo por separado. El README describe todo lo implementado, las reglas de negocio, los comandos y los límites de las integraciones externas. El proyecto continúa siendo local, sin despliegue en Vercel.
