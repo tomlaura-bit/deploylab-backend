@@ -7,6 +7,11 @@ import org.springframework.context.annotation.*;
 
 @Configuration
 public class OpenApiConfig {
+    @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
+    org.springdoc.core.models.GroupedOpenApi modulesApi() {
+        return org.springdoc.core.models.GroupedOpenApi.builder().group("modules").pathsToMatch("/api/**").build();
+    }
     @Bean org.springdoc.core.models.GroupedOpenApi coreApi() {
         return org.springdoc.core.models.GroupedOpenApi.builder().group("core")
             .pathsToMatch("/auth/register","/login","/talleres","/talleres/*","/escenarios/*/intentos","/intentos/*/acciones","/intentos/*/finalizar").build();

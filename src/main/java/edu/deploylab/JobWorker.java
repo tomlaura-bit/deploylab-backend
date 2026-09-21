@@ -43,11 +43,11 @@ public class JobWorker {
         }
         List<Map<String,Object>> rows;
         if(kind.equals("PERSONAL_REPORT")) {
-            rows=db.jdbc.queryForList("SELECT sc.title,a.state,a.score,a.mistakes,a.hints,a.created_at FROM attempt a JOIN scenario sc ON sc.id=a.scenario_id WHERE a.user_id=? ORDER BY a.created_at",owner);
+            rows=db.jdbc.queryForList("SELECT sc.title,a.state,a.finalized,a.score,a.mistakes,a.hints,a.created_at FROM attempt a JOIN scenario sc ON sc.id=a.scenario_id WHERE a.user_id=? ORDER BY a.created_at",owner);
         } else if(kind.equals("GROUP_REPORT")) {
             UUID group=UUID.fromString(job.get("payload").toString());
             db.one("SELECT id FROM study_group WHERE id=? AND instructor_id=?",group,owner);
-            rows=db.jdbc.queryForList("SELECT u.name,sc.title,a.state,a.score,a.mistakes,a.hints FROM membership m JOIN app_user u ON u.id=m.user_id JOIN attempt a ON a.user_id=u.id JOIN scenario sc ON sc.id=a.scenario_id JOIN assignment ass ON ass.workshop_id=sc.workshop_id AND ass.group_id=m.group_id WHERE m.group_id=? AND m.role='STUDENT' ORDER BY u.name,a.created_at",group);
+            rows=db.jdbc.queryForList("SELECT u.name,sc.title,a.state,a.score,a.mistakes,a.hints FROM membership m JOIN app_user u ON u.id=m.user_id JOIN attempt a ON a.user_id=u.id JOIN scenario sc ON sc.id=a.scenario_id JOIN assignment ass ON ass.id=a.assignment_id AND ass.group_id=m.group_id WHERE m.group_id=? AND m.role='STUDENT' AND a.finalized=TRUE ORDER BY u.name,a.created_at",group);
         } else throw new IllegalArgumentException("Tipo desconocido");
         if(rows.isEmpty()) return "resultado\r\n\"Sin intentos registrados\"\r\n";
         var columns=new ArrayList<>(rows.getFirst().keySet()); StringBuilder csv=new StringBuilder(String.join(",",columns)).append("\r\n");

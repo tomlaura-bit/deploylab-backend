@@ -1,4 +1,4 @@
-param([int]$ApiPort = 8080, [int]$DatabasePort = 55440, [string]$PostgresBin = '')
+param([int]$ApiPort = 8080, [int]$DatabasePort = 55440, [string]$PostgresBin = '', [switch]$CoreOnly)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $dataDir = Join-Path $projectRoot 'data'
@@ -57,7 +57,7 @@ try {
     $env:INSTRUCTOR_PASSWORD = $config.instructorPassword
     $env:PORT = "$ApiPort"
     $env:MAIL_ENABLED = 'false'
-    $env:EXTRAS_ENABLED = 'false'
+    $env:EXTRAS_ENABLED = if ($CoreOnly) { 'false' } else { 'true' }
     $jarPath = Join-Path $projectRoot 'target/deploylab-backend-1.0.0.jar'
     $javaPath = (Get-Command java.exe -ErrorAction Stop).Source
     $process = Start-Process -FilePath $javaPath -ArgumentList @('-jar', ('"' + $jarPath + '"'), '--server.address=127.0.0.1') -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $dataDir 'api.log') -RedirectStandardError (Join-Path $dataDir 'api-error.log')

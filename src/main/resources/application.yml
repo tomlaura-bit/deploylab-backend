@@ -5,6 +5,10 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/deploylab}
     username: ${DB_USER:deploylab}
     password: ${DB_PASSWORD:deploylab}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
   jackson:
     deserialization:
       fail-on-unknown-properties: true
@@ -28,7 +32,7 @@ management:
   endpoints.web.exposure.include: health,info
   endpoint.health.show-details: never
 app:
-  extras-enabled: ${EXTRAS_ENABLED:false}
+  extras-enabled: ${EXTRAS_ENABLED:true}
   cors-origin: ${CORS_ORIGIN:http://localhost:5173}
   instructor-email: ${INSTRUCTOR_EMAIL:}
   instructor-password: ${INSTRUCTOR_PASSWORD:}

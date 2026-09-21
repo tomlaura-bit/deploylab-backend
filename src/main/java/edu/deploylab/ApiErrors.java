@@ -11,6 +11,8 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 
 @RestControllerAdvice
 public class ApiErrors {
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    ResponseEntity<?> uploadTooLarge(Exception e) { return error(413,"El archivo supera el límite de carga"); }
     @ExceptionHandler(ApiException.class)
     ResponseEntity<?> domain(ApiException e) { return error(e.status, e.getMessage()); }
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class,

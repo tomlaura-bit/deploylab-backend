@@ -12,6 +12,10 @@ public class GroupController {
     public GroupController(GroupService groups,JobService jobs) {this.groups=groups;this.jobs=jobs;}
     @PostMapping @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     public Object create(@AuthenticationPrincipal AuthService.Actor user,@Valid @RequestBody GroupService.NewGroup body) {return Map.of("id",groups.create(user,body.name()));}
+    @PatchMapping("/{id}") @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
+    public void edit(@PathVariable UUID id,@AuthenticationPrincipal AuthService.Actor user,@Valid @RequestBody GroupService.EditGroup body) {groups.edit(id,user,body);}
+    @PostMapping("/{id}/members/by-email") @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
+    public void email(@PathVariable UUID id,@AuthenticationPrincipal AuthService.Actor user,@Valid @RequestBody GroupService.EmailMember body) {groups.addByEmail(id,user,body.email());}
     @GetMapping public Object list(@AuthenticationPrincipal AuthService.Actor user) {return groups.list(user);}
     @GetMapping("/{id}") public Object detail(@PathVariable UUID id,@AuthenticationPrincipal AuthService.Actor user) {return groups.detail(id,user);}
     @PostMapping("/{id}/members") @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)

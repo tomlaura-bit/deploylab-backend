@@ -17,42 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
-class ApiIntegrationTest {
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper json;
-    @Autowired Db db;
-    @Autowired JobWorker worker;
-    @Autowired AuthService auth;
-    @Autowired AttemptService attempts;
-    record User(String token,UUID id) {}
-    JsonNode perform(MockHttpServletRequestBuilder req,int status) throws Exception {
-        String response=mvc.perform(req).andExpect(status().is(status)).andReturn().getResponse().getContentAsString();
-        return response.isBlank()?json.nullNode():json.readTree(response);
-    }
-    MockHttpServletRequestBuilder body(MockHttpServletRequestBuilder req,Object body) throws Exception {
-        return req.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
-    }
-    MockHttpServletRequestBuilder as(MockHttpServletRequestBuilder req,User user) {return req.header("Authorization","Bearer "+user.token());}
-    User student() throws Exception {
-        String email=UUID.randomUUID()+"@example.test";
-        var u=perform(body(post("/api/auth/register"),Map.of("name","Student","email",email,"password","SecureTest123!")),201);
-        var login=perform(body(post("/api/auth/login"),Map.of("email",email,"password","SecureTest123!")),200);
-        return new User(login.get("token").asText(),UUID.fromString(u.get("id").asText()));
-    }
-    User teacher() throws Exception {
-        var l=perform(body(post("/api/auth/login"),Map.of("email","teacher@deploylab.test","password","TestingOnly123!")),200);
-        return new User(l.get("token").asText(),UUID.fromString(l.get("user").get("id").asText()));
-    }
-    UUID scenario(String key) {return Db.id(db.one("SELECT id FROM scenario WHERE template_key=? AND workshop_id=?",key,UUID.fromString("10000000-0000-0000-0000-000000000001")),"id");}
-    UUID start(User u,String template) throws Exception {
-        return UUID.fromString(perform(as(body(post("/api/attempts"),Map.of("scenarioId",scenario(template))),u),201).get("id").asText());
-    }
-    JsonNode action(User u,UUID id,String code,UUID key,int status) throws Exception {
-        return perform(as(body(post("/api/attempts/{id}/actions",id),Map.of("code",code)),u).header("Idempotency-Key",key),status);
-    }
-    UUID group(User teacher) throws Exception {
-        return UUID.fromString(perform(as(body(post("/api/groups"),Map.of("name","Grupo de prueba")),teacher),201).get("id").asText());
-    }
+class ApiIntegrationTest extends ApiTestSupport {
     @Test void publicHealthAndDocumentationAreAvailable() throws Exception {
         perform(get("/actuator/health"),200);perform(get("/v3/api-docs"),200);
     }
@@ -168,14 +133,14 @@ class ApiIntegrationTest {
         perform(as(get("/api/groups/{id}",g),outsider),404);
         UUID workshop=UUID.fromString("10000000-0000-0000-0000-000000000001");
         var assignment=Map.of("workshopId",workshop,"dueAt",OffsetDateTime.now().plusDays(7).toString());
-        perform(as(body(post("/api/groups/{id}/assignments",g),assignment),t),201);
+        String assignmentId=perform(as(body(post("/api/groups/{id}/assignments",g),assignment),t),201).get("id").asText();
         perform(as(body(post("/api/groups/{id}/assignments",g),assignment),t),409);
         var notifications=perform(as(get("/api/notifications"),s),200);
         assertThat(notifications.size()).isEqualTo(1);
         String notification=notifications.get(0).get("id").asText();
         perform(as(patch("/api/notifications/{id}/read",notification),outsider),404);
         perform(as(patch("/api/notifications/{id}/read",notification),s),204);
-        UUID a=start(s,"API_URL");action(s,a,"FIX_URL",UUID.randomUUID(),200);
+        UUID a=UUID.fromString(perform(as(body(post("/api/assignments/{id}/attempts",assignmentId),Map.of("scenarioId",scenario("API_URL"))),s),201).get("id").asText());action(s,a,"FIX_URL",UUID.randomUUID(),200);
         perform(as(post("/api/attempts/{id}/finish",a),s),200);
         var stats=perform(as(get("/api/groups/{id}/statistics",g),t),200);
         assertThat(stats.get(0).get("resolved").asInt()).isEqualTo(1);
