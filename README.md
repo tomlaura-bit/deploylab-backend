@@ -1,10 +1,10 @@
 # DeployLab Backend
 
-Backend de la propuesta aprobada para CS 2031 DBP: plataforma educativa para practicar el diagnóstico de errores mediante escenarios simulados. El alumno registra acciones, recibe una evaluación y consulta su historial. El instructor crea talleres, organiza grupos, asigna trabajo y revisa entregas.
+DeployLab es el backend de una plataforma educativa para practicar el diagnóstico de errores mediante escenarios simulados. Un estudiante analiza evidencia, registra acciones y recibe una evaluación. Un instructor crea talleres, organiza grupos, asigna actividades y revisa entregas.
 
-Se implementaron los **siete endpoints enumerados por el profesor** y se ampliaron los módulos de gestión. La entrega incluye código, base de datos, pruebas, Swagger, Postman, demostraciones y un historial Git real. No incluye una interfaz gráfica de alumno y no se ha desplegado en Vercel.
+Este repositorio contiene la API REST, el esquema de base de datos, pruebas automatizadas, documentación OpenAPI, una colección de Postman y scripts de demostración. No incluye frontend ni necesita servicios externos para ejecutar el flujo principal en local.
 
-## 1. Qué se ha hecho hasta ahora
+## 1. Funcionalidades
 
 | Módulo | Funcionalidad implementada |
 |---|---|
@@ -21,9 +21,9 @@ Se implementaron los **siete endpoints enumerados por el profesor** y se ampliar
 | Reportes | CSV personal y de grupo, procesamiento en segundo plano, estado, descarga y reintento de trabajos fallidos |
 | Notificaciones | Aviso interno al asignar taller, filtro de no leídas, paginación, marcar una o todas como leídas y correo opcional |
 
-La ampliación corrigió un problema: las estadísticas de un grupo podían incluir prácticas personales de sus miembros. Ahora la entrega se vincula explícitamente mediante `assignment_id`; las prácticas iniciadas desde el núcleo no aparecen en reportes del grupo.
+Las prácticas personales y las entregas de una asignación son conceptos distintos. Una entrega queda vinculada explícitamente mediante `assignment_id`; los intentos personales no aparecen en estadísticas ni reportes de un grupo.
 
-## 2. Tecnologías y organización
+## 2. Arquitectura y recorrido del código
 
 Java 21, Spring Boot 3.5.7, PostgreSQL 17, Spring Security, JDBC (`JdbcTemplate`), Flyway, Bean Validation, Springdoc/OpenAPI, JUnit, MockMvc y JaCoCo. Maven Wrapper permite compilar sin instalar Maven por separado.
 
@@ -36,7 +36,18 @@ docs/                        Postman, guion y evidencias
 .github/workflows/ci.yml       CI preparada para PostgreSQL
 ```
 
-Los controladores validan solicitudes; los servicios aplican permisos y reglas de negocio. PostgreSQL conserva usuarios, talleres, escenarios, intentos, eventos, evaluaciones, grupos, miembros, asignaciones, materiales, avisos y trabajos. El motor usa transacciones y bloqueos de fila.
+La aplicación sigue una estructura sencilla por responsabilidades. Los controladores definen las rutas HTTP y validan las entradas; los servicios aplican permisos y reglas de negocio; `Db` concentra el acceso JDBC. PostgreSQL conserva usuarios, talleres, escenarios, intentos, eventos, evaluaciones, grupos, miembros, asignaciones, materiales, avisos y trabajos. El motor usa transacciones y bloqueos de fila.
+
+Para entender el proyecto por primera vez, este es un buen orden de lectura:
+
+1. `CoreController` muestra el flujo mínimo público de autenticación, catálogo y simulación.
+2. `AuthService` explica cómo se crean usuarios y tokens.
+3. `CatalogService` contiene talleres, escenarios y plantillas iniciales.
+4. `AttemptService` implementa acciones, idempotencia, bloqueo y evaluación.
+5. `AssignmentService` relaciona grupos, tareas e intentos entregables.
+6. `GroupService`, `InstructorController` y `DashboardController` completan la gestión académica.
+7. `MaterialController`, `JobService` y `JobWorker` cubren archivos, reportes y correo en segundo plano.
+8. `src/main/resources/db/migration` permite reconstruir la evolución completa del esquema.
 
 Las migraciones son incrementales: V1 crea el esquema; V2 asocia habilidades; V3 introduce el estado de materiales; V4 persiste evaluaciones; V5 ordena eventos; V6 añade asignaciones explícitas, archivado, cancelación y PDF locales. No se modificaron migraciones ya aplicadas. Los intentos anteriores a V6 mantienen `assignment_id=null`: no se atribuyen retrospectivamente a grupos.
 
@@ -52,7 +63,7 @@ Requisitos: Java 21 y PostgreSQL 17 instalado. La primera compilación necesita 
 
 La API escucha en `http://127.0.0.1:8080`. El script usa una base aislada en `data/postgres`, puerto `55440`, sin modificar las bases del servicio PostgreSQL existente. Conserva los datos entre reinicios. El instructor inicial y las credenciales aleatorias quedan en `data/local-config.json`, excluido de Git. Las demos crean datos ficticios nuevos y no imprimen tokens ni contraseñas.
 
-[Swagger interactivo](http://localhost:8080/swagger-ui/index.html): selecciona **core** para los siete endpoints o **modules** para `/api`. Especificaciones: `/v3/api-docs/core` y `/v3/api-docs/modules`. Inicia sesión y pega el valor de `token` en **Authorize**. El registro público siempre crea estudiantes; las credenciales del instructor están en el archivo local indicado.
+[Swagger interactivo](http://localhost:8080/swagger-ui/index.html): selecciona **core** para el flujo mínimo o **modules** para la API ampliada bajo `/api`. Las especificaciones están en `/v3/api-docs/core` y `/v3/api-docs/modules`. Inicia sesión, copia el valor de `token` y pégalo en **Authorize**. El registro público siempre crea estudiantes; las credenciales del instructor están en el archivo local indicado.
 
 ```powershell
 # Detener conservando datos
@@ -66,7 +77,7 @@ La API escucha en `http://127.0.0.1:8080`. El script usa una base aislada en `da
 
 Detén la instancia antes de cambiar de modo. Los módulos están **habilitados por defecto** (`EXTRAS_ENABLED=true`). El modo núcleo conserva tablas, pero no expone controladores opcionales ni ejecuta el trabajador de reportes. El puerto de PostgreSQL debe coincidir con el guardado al inicializar la base.
 
-## 4. Contrato prioritario del profesor
+## 4. API principal
 
 Todas las rutas salvo registro y login requieren `Authorization: Bearer <token>`. Los cuerpos usan campos en inglés; las respuestas JDBC conservan nombres SQL como `created_at`.
 
@@ -80,7 +91,7 @@ Todas las rutas salvo registro y login requieren `Authorization: Bearer <token>`
 | POST | `/intentos/{id}/acciones` | `{ "code": "FIX_URL" }` y `Idempotency-Key: <UUID>` |
 | POST | `/intentos/{id}/finalizar` | Cerrar y devolver evaluación e historial; sin cuerpo |
 
-El profesor los denominó seis, pero enumeró siete. `/auth/login` es alias de `/login`. `/auth/me`, `/auth/logout`, `/intentos` y `/intentos/{id}` completan sesión e historial. Se conservan los alias `/api/auth/*` y `/api/attempts/*`.
+Estas siete rutas forman el flujo mínimo de la aplicación. `/auth/login` es alias de `/login`. `/auth/me`, `/auth/logout`, `/intentos` y `/intentos/{id}` completan sesión e historial. También existen los alias `/api/auth/*` y `/api/attempts/*`, usados por los módulos ampliados.
 
 Taller inicial: `10000000-0000-0000-0000-000000000001`. Escenarios: API mal configurada, credenciales ficticias incorrectas y permisos insuficientes. Sus IDs se consultan en el detalle del taller.
 
@@ -92,7 +103,7 @@ Taller inicial: `10000000-0000-0000-0000-000000000001`. Escenarios: API mal conf
 4. Finalizar exige una acción como mínimo, persiste evaluación y fecha de cierre. Entregar sin resolver produce cero puntos.
 5. El cierre rechaza acciones nuevas. Repetir finalizar devuelve la misma evaluación y fecha.
 
-Nota resuelta: `max(0, 100 - 10 × errores - 5 × pistas)`. Sin resolver: 0. Repetir una pista no penaliza nuevamente. La fórmula es una decisión del proyecto, no una rúbrica del profesor.
+Nota resuelta: `max(0, 100 - 10 × errores - 5 × pistas)`. Sin resolver: 0. Repetir una pista no penaliza nuevamente. La fórmula se encuentra aislada en `SimulationEngine`, por lo que puede cambiarse sin modificar el controlador HTTP.
 
 `state` describe el incidente; `finalized` describe la entrega. Sin resolver puede conservar `IN_PROGRESS` con `finalized=true` y `evaluation.solved=false`. Los eventos mantienen `score=0`; la nota oficial se calcula al finalizar.
 
@@ -139,7 +150,7 @@ Como instructor, crear con `POST /api/workshops`:
 
 El taller se publica inmediatamente. `PATCH /api/instructor/workshops/{id}` recibe `title`, `description`, `topic`, `difficulty` y `published`. El propietario consulta talleres despublicados en la ruta de instructor. Despublicar impide iniciar intentos nuevos; los existentes conservan historial y pueden finalizarse.
 
-Crear grupo con `{ "name": "DBP Grupo 1" }`. Añadir estudiante registrado con `userId` en `/members` o `email` en `/members/by-email`. Asignar taller:
+Crear un grupo con `{ "name": "Grupo Backend 1" }`. Añadir un estudiante registrado con `userId` en `/members` o `email` en `/members/by-email`. Asignar un taller:
 
 ```json
 {
@@ -148,7 +159,7 @@ Crear grupo con `{ "name": "DBP Grupo 1" }`. Añadir estudiante registrado con `
 }
 ```
 
-Usa una fecha futura real del curso. El alumno consulta `/api/assignments` y comienza mediante `/api/assignments/{id}/attempts` con `{ "scenarioId": "<UUID>" }`. Acciones y cierre usan el mismo simulador; el servidor establece la asociación con la tarea.
+`dueAt` debe ser una fecha futura en formato ISO 8601 y con zona horaria. El alumno consulta `/api/assignments` y comienza mediante `/api/assignments/{id}/attempts` con `{ "scenarioId": "<UUID>" }`. Las acciones y el cierre usan el mismo simulador; el servidor establece la asociación con la tarea.
 
 ### Reglas de grupos, plazos y privacidad
 
@@ -207,7 +218,7 @@ Se prueban credenciales/roles, catálogo, motor, puntuación, pistas, idempotenc
 
 La colección `docs/DeployLab.postman_collection.json` verifica el núcleo en orden. `Demo-Modules.ps1` verifica por HTTP instructor → alumno → asignación → entrega → reporte. La CI está preparada con PostgreSQL, pero no se ha ejecutado en un remoto.
 
-## 9. Commits para el profesor
+## 9. Historial técnico y evidencias
 
 ```powershell
 git log --oneline --reverse
@@ -219,9 +230,9 @@ git show 5152675
 git show d62bc9e
 ```
 
-Hay commits reales de pruebas fallidas antes de implementar y correcciones posteriores. `5152675` demuestra la falta de carga local PDF y la inclusión incorrecta de prácticas personales en estadísticas. `d62bc9e` implementa la ampliación y conserva las evidencias de las pruebas aprobadas. Una prueba de rechazo que pasa al recibir 403/404 es distinta de una ejecución RED que realmente falla.
+El historial conserva etapas RED/GREEN del desarrollo. Los commits `0337c10` y `6264588` agregan pruebas antes de sus respectivas implementaciones; `d461463` y `e20f74f` incorporan los cambios que las hacen pasar. `5152675` reproduce la ausencia de carga PDF local y la inclusión incorrecta de prácticas personales en estadísticas; `d62bc9e` implementa la ampliación corregida.
 
-Autor de los commits: **Codex**, con fechas reales. El repositorio es local, sin remoto. Para recuperar el historial portable:
+El archivo bundle incluido permite clonar el historial completo sin depender de un servidor Git remoto:
 
 ```text
 git clone DeployLab_Backend_Historial.bundle deploylab-con-historial
@@ -239,6 +250,6 @@ git clone DeployLab_Backend_Historial.bundle deploylab-con-historial
 | `MAIL_ENABLED`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTH`, `SMTP_TLS`, `MAIL_FROM` | Correo opcional |
 | `S3_BUCKET`, `AWS_REGION` | S3 opcional; credenciales por la cadena estándar del SDK AWS |
 
-Con base existente: configurar variables y ejecutar `./mvnw.cmd spring-boot:run`. Con Docker Desktop: copiar `.env.example` a `.env`, configurar credenciales y ejecutar `docker compose up --build`. Incluye PostgreSQL y Mailpit para capturar correo localmente. Docker es una alternativa incluida, no la vía usada para validar esta entrega.
+Con una base existente, configura las variables y ejecuta `./mvnw.cmd spring-boot:run`. Con Docker Desktop, copia `.env.example` a `.env`, configura credenciales y ejecuta `docker compose up --build`. El archivo Compose incluye PostgreSQL y Mailpit para capturar correo localmente.
 
 El backend cubre los flujos académicos descritos. SMTP y S3 tienen pruebas con dobles de servicio y casos de indisponibilidad, sin validación de una cuenta externa real. Quedan fuera frontend, recuperación de contraseña, verificación de correo, administración general de roles, editor libre de escenarios y preparación operativa para alta carga. PDF en PostgreSQL simplifica la entrega local; S3 permite separar archivos al crecer el volumen.
