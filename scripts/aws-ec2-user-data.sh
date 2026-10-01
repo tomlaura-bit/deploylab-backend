@@ -7,6 +7,14 @@ dnf update -y
 dnf install -y docker git openssl
 systemctl enable --now docker
 
+# The free-tier t3.micro has 1 GiB RAM. Swap keeps the one-time Maven image
+# build from being killed while leaving the final API and database unaffected.
+fallocate -l 1G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
+
 install -d -m 0755 /opt/deploylab
 git clone --depth 1 https://github.com/tomlaura-bit/deploylab-backend.git /opt/deploylab/source
 
@@ -48,4 +56,3 @@ docker run -d \
   -e CORS_ORIGIN='*' \
   -e EXTRAS_ENABLED=true \
   deploylab-api:latest
-
