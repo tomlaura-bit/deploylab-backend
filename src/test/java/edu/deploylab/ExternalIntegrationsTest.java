@@ -31,7 +31,7 @@ class ExternalIntegrationsTest {
         @SuppressWarnings("unchecked") var result=(Map<String,Object>)materials.upload(w,t,new MaterialController.Upload("guia.pdf"));
         UUID id=(UUID)result.get("id");
         assertThat((List<?>)materials.list(w)).isEmpty();
-        assertThatThrownBy(()->materials.download(w,id)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(()->materials.download(w,id)).isInstanceOf(ResourceNotFoundException.class);
         materials.confirm(w,id,t);
         verify(storage).verifyUpload(contains("/"+id+"/guia.pdf"));
         assertThat((List<?>)materials.list(w)).hasSize(1);
@@ -55,7 +55,7 @@ class ExternalIntegrationsTest {
         var t=teacher();UUID w=catalog.create(t,new CatalogService.CreateWorkshop("Private owner","Description","Topic","BEGINNER",List.of("API_URL")));
         var other=new AuthService.Actor(UUID.randomUUID(),"Other","other@example.test","INSTRUCTOR");
         assertThatThrownBy(()->materials.upload(w,other,new MaterialController.Upload("guia.pdf")))
-            .isInstanceOf(ApiException.class).hasMessageContaining("permiso");
+            .isInstanceOf(ForbiddenOperationException.class).hasMessageContaining("permiso");
         verifyNoInteractions(storage);
     }
 }
