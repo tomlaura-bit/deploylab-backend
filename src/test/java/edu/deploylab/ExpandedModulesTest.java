@@ -17,7 +17,7 @@ class ExpandedModulesTest extends ApiTestSupport {
         perform(as(body(post("/api/assignments/{id}/attempts",a),request),outsider),404);
         perform(as(body(post("/api/assignments/{id}/attempts",a),Map.of("scenarioId",UUID.randomUUID())),s),400);
         perform(as(body(patch("/api/assignments/{id}",a),Map.of("dueAt",OffsetDateTime.now().plusDays(3))),s),403);
-        db.jdbc.update("UPDATE assignment SET due_at=? WHERE id=?",OffsetDateTime.now().minusDays(1),UUID.fromString(a));
+        db.update("UPDATE assignment SET due_at=? WHERE id=?",OffsetDateTime.now().minusDays(1),UUID.fromString(a));
         perform(as(body(post("/api/assignments/{id}/attempts",a),request),s),409);
         perform(as(body(patch("/api/assignments/{id}",a),Map.of("dueAt",OffsetDateTime.now().plusDays(3))),t),204);
         perform(as(body(patch("/api/groups/{id}",g),Map.of("name","Archived","archived",true)),t),204);
@@ -30,8 +30,8 @@ class ExpandedModulesTest extends ApiTestSupport {
     @Test void jobsNotificationsAndDashboardAreScopedToCurrentUser() throws Exception {
         var s=student();var other=student();
         UUID notification=UUID.randomUUID(),job=UUID.randomUUID();
-        db.jdbc.update("INSERT INTO notification(id,user_id,message) VALUES (?,?,?)",notification,s.id(),"Test");
-        db.jdbc.update("INSERT INTO background_job(id,owner_id,kind,state,payload,attempts) VALUES (?,?,'PERSONAL_REPORT','FAILED','',3)",job,s.id());
+        db.update("INSERT INTO notification(id,user_id,message) VALUES (?,?,?)",notification,s.id(),"Test");
+        db.update("INSERT INTO background_job(id,owner_id,kind,state,payload,attempts) VALUES (?,?,'PERSONAL_REPORT','FAILED','',3)",job,s.id());
         perform(as(post("/api/jobs/{id}/retry",job),other),404);
         perform(as(post("/api/jobs/{id}/retry",job),s),202);
         perform(as(post("/api/jobs/{id}/retry",job),s),409);

@@ -27,6 +27,6 @@ class TransactionRollbackTest {
             .isInstanceOf(DataIntegrityViolationException.class);
         assertThat(db.one("SELECT state,finalized FROM attempt WHERE id=?",id))
             .containsEntry("state","IN_PROGRESS").containsEntry("finalized",false);
-        assertThat(db.jdbc.queryForObject("SELECT COUNT(*) FROM attempt_event WHERE attempt_id=?",Integer.class,id)).isZero();
+        assertThat(db.scalar("SELECT COUNT(*) FROM attempt_event WHERE attempt_id=?",Integer.class,id)).isZero();
     }
 }

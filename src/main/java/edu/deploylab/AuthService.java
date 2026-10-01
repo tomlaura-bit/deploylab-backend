@@ -37,7 +37,7 @@ public class AuthService {
     public Actor register(Register r) {
         validatePassword(r.password());
         UUID id=UUID.randomUUID(); String email=r.email().trim().toLowerCase(Locale.ROOT);
-        db.jdbc.update("INSERT INTO app_user(id,name,email,password_hash,role) VALUES (?,?,?,?,'STUDENT')",
+        db.update("INSERT INTO app_user(id,name,email,password_hash,role) VALUES (?,?,?,?,'STUDENT')",
             id,r.name().trim(),email,passwords.encode(r.password()));
         var actor=new Actor(id,r.name().trim(),email,"STUDENT");
         events.publishEvent(new UserRegisteredEvent(id,email,Instant.now()));
@@ -46,7 +46,7 @@ public class AuthService {
     @Transactional
     public Session login(Login r) {
         validatePassword(r.password());
-        var users=db.jdbc.queryForList("SELECT * FROM app_user WHERE email=?",r.email().trim().toLowerCase(Locale.ROOT));
+        var users=db.query("SELECT * FROM app_user WHERE email=?",r.email().trim().toLowerCase(Locale.ROOT));
         String hash=users.isEmpty()?dummyHash:users.getFirst().get("password_hash").toString();
         if (!passwords.matches(r.password(),hash) || users.isEmpty()) throw new InvalidCredentialsException("Credenciales inválidas");
         var u=actor(users.getFirst());
@@ -55,7 +55,7 @@ public class AuthService {
     public Actor authenticate(String token) {
         try {
             var claims=jwt.verify(token);
-            var rows=db.jdbc.queryForList("SELECT u.* FROM app_user u JOIN auth_token t ON t.user_id=u.id WHERE t.token_hash=? AND t.expires_at>CURRENT_TIMESTAMP",digest(token));
+            var rows=db.query("SELECT u.* FROM app_user u JOIN auth_token t ON t.user_id=u.id WHERE t.token_hash=? AND t.expires_at>CURRENT_TIMESTAMP",digest(token));
             if(rows.isEmpty()) return null;
             var authenticated=actor(rows.getFirst());
             boolean matches=authenticated.id().toString().equals(claims.getSubject())
@@ -67,25 +67,25 @@ public class AuthService {
     @Transactional
     public Session refresh(Refresh r) {
         String hash=digest(r.refreshToken());
-        var rows=db.jdbc.queryForList("SELECT u.* FROM app_user u JOIN refresh_token t ON t.user_id=u.id WHERE t.token_hash=? AND t.revoked=FALSE AND t.expires_at>CURRENT_TIMESTAMP FOR UPDATE",hash);
+        var rows=db.query("SELECT u.* FROM app_user u JOIN refresh_token t ON t.user_id=u.id WHERE t.token_hash=? AND t.revoked=FALSE AND t.expires_at>CURRENT_TIMESTAMP FOR UPDATE",hash);
         if(rows.isEmpty()) throw new InvalidCredentialsException("Refresh token inválido o vencido");
         var user=actor(rows.getFirst());
-        db.jdbc.update("UPDATE refresh_token SET revoked=TRUE WHERE token_hash=?",hash);
+        db.update("UPDATE refresh_token SET revoked=TRUE WHERE token_hash=?",hash);
         return issueSession(user);
     }
     @Transactional
     public void logout(String token) {
         var user=authenticate(token);
-        db.jdbc.update("DELETE FROM auth_token WHERE token_hash=?",digest(token));
-        if(user!=null) db.jdbc.update("UPDATE refresh_token SET revoked=TRUE WHERE user_id=?",user.id());
+        db.update("DELETE FROM auth_token WHERE token_hash=?",digest(token));
+        if(user!=null) db.update("UPDATE refresh_token SET revoked=TRUE WHERE user_id=?",user.id());
     }
     private Session issueSession(Actor user) {
         var access=jwt.issue(user);
         byte[] bytes=new byte[48]; random.nextBytes(bytes);
         String refresh=Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         Instant refreshExpiry=Instant.now().plus(refreshDuration);
-        db.jdbc.update("INSERT INTO auth_token(token_hash,user_id,expires_at) VALUES (?,?,?)",digest(access.value()),user.id(),OffsetDateTime.ofInstant(access.expiresAt(),ZoneOffset.UTC));
-        db.jdbc.update("INSERT INTO refresh_token(token_hash,user_id,expires_at) VALUES (?,?,?)",digest(refresh),user.id(),OffsetDateTime.ofInstant(refreshExpiry,ZoneOffset.UTC));
+        db.update("INSERT INTO auth_token(token_hash,user_id,expires_at) VALUES (?,?,?)",digest(access.value()),user.id(),OffsetDateTime.ofInstant(access.expiresAt(),ZoneOffset.UTC));
+        db.update("INSERT INTO refresh_token(token_hash,user_id,expires_at) VALUES (?,?,?)",digest(refresh),user.id(),OffsetDateTime.ofInstant(refreshExpiry,ZoneOffset.UTC));
         return new Session(access.value(),refresh,access.expiresAt(),user);
     }
     static Actor actor(Map<String,Object> u) { return new Actor(Db.id(u,"id"),u.get("name").toString(),u.get("email").toString(),u.get("role").toString()); }

@@ -78,7 +78,7 @@ class CoreContractTest {
         finish(token,id,409);finish(other,id,404);
         call("POST","/intentos/"+id+"/finalizar",null,null,401,null);
         act(other,id,"FIX_URL",UUID.randomUUID().toString(),404);
-        assertThat(db.jdbc.queryForObject("SELECT COUNT(*) FROM attempt_event WHERE attempt_id=?",Integer.class,UUID.fromString(id))).isZero();
+        assertThat(db.scalar("SELECT COUNT(*) FROM attempt_event WHERE attempt_id=?",Integer.class,UUID.fromString(id))).isZero();
     }
     @Test void concurrentFinalizationCreatesOneEvaluation() throws Exception {
         String token=user(),id=start(token);act(token,id,"FIX_URL",UUID.randomUUID().toString(),200);
@@ -88,7 +88,7 @@ class CoreContractTest {
             var first=results.getFirst().get();
             for(var r:results) assertThat(r.get(10,TimeUnit.SECONDS)).isEqualTo(first);
         }
-        assertThat(db.jdbc.queryForObject("SELECT COUNT(*) FROM attempt_evaluation WHERE attempt_id=?",Integer.class,UUID.fromString(id))).isEqualTo(1);
+        assertThat(db.scalar("SELECT COUNT(*) FROM attempt_evaluation WHERE attempt_id=?",Integer.class,UUID.fromString(id))).isEqualTo(1);
     }
     @Test void optionalModulesAreDisabledAndSwaggerListsExactlySevenCoreOperations() throws Exception {
         String token=user();

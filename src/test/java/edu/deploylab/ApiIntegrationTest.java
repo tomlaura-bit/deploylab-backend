@@ -31,7 +31,7 @@ class ApiIntegrationTest extends ApiTestSupport {
         perform(as(post("/api/auth/logout"),u),204); perform(as(get("/api/auth/me"),u),401);
     }
     @Test void expiredTokenIsRejected() throws Exception {
-        User u=student(); db.jdbc.update("UPDATE auth_token SET expires_at=? WHERE user_id=?",OffsetDateTime.now().minusHours(1),u.id());
+        User u=student(); db.update("UPDATE auth_token SET expires_at=? WHERE user_id=?",OffsetDateTime.now().minusHours(1),u.id());
         perform(as(get("/api/auth/me"),u),401);
     }
     @Test void duplicateEmailInvalidPasswordAndRoleEscalationAreRejected() throws Exception {
@@ -88,7 +88,7 @@ class ApiIntegrationTest extends ApiTestSupport {
         action(u,id,"FIX_ROLE",UUID.randomUUID(),400);
         perform(as(body(post("/api/attempts/{id}/actions",id),Map.of("code","FIX_URL")),u),400);
         assertThat(db.one("SELECT mistakes FROM attempt WHERE id=?",id).get("mistakes")).isEqualTo(0);
-        assertThat(db.jdbc.queryForObject("SELECT COUNT(*) FROM attempt_event WHERE attempt_id=?",Integer.class,id)).isZero();
+        assertThat(db.scalar("SELECT COUNT(*) FROM attempt_event WHERE attempt_id=?",Integer.class,id)).isZero();
     }
     @Test void idempotencyReplaysOriginalResultAndRejectsKeyReuse() throws Exception {
         User u=student();UUID id=start(u,"API_URL"),key=UUID.randomUUID();
@@ -96,7 +96,7 @@ class ApiIntegrationTest extends ApiTestSupport {
         assertThat(second).isEqualTo(first);
         action(u,id,"RESTART",key,409);action(u,id,"FIX_URL",UUID.randomUUID(),409);
         perform(as(post("/api/attempts/{id}/hint",id),u),409);
-        assertThat(db.jdbc.queryForObject("SELECT COUNT(*) FROM attempt_event WHERE attempt_id=?",Integer.class,id)).isEqualTo(1);
+        assertThat(db.scalar("SELECT COUNT(*) FROM attempt_event WHERE attempt_id=?",Integer.class,id)).isEqualTo(1);
     }
     @Test void anotherStudentCannotReadOrChangeAttempt() throws Exception {
         User owner=student(),other=student();UUID id=start(owner,"API_URL");
@@ -162,7 +162,7 @@ class ApiIntegrationTest extends ApiTestSupport {
     }
     @Test void unavailableEmailRetriesAndEndsFailedWithoutBlockingAssignment() throws Exception {
         User s=student();UUID job=UUID.randomUUID();
-        db.jdbc.update("INSERT INTO background_job(id,owner_id,kind,state,payload) VALUES (?,?,'EMAIL','PENDING','Test')",job,s.id());
+        db.update("INSERT INTO background_job(id,owner_id,kind,state,payload) VALUES (?,?,'EMAIL','PENDING','Test')",job,s.id());
         worker.tick();worker.tick();worker.tick();
         assertThat(db.one("SELECT state,attempts FROM background_job WHERE id=?",job)).containsEntry("state","FAILED").containsEntry("attempts",3);
     }

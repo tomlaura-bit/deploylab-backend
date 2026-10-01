@@ -18,16 +18,16 @@ public class InstructorController {
     public InstructorController(Db db,CatalogService catalog) {this.db=db;this.catalog=catalog;}
     @GetMapping @PreAuthorize("hasRole('INSTRUCTOR')") public Object list(@AuthenticationPrincipal AuthService.Actor user,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {
         user.instructor();AssignmentService.page(page,size);
-        return db.jdbc.queryForList("SELECT * FROM workshop WHERE owner_id=? ORDER BY title,id LIMIT ? OFFSET ?",user.id(),size,page*size);
+        return db.query("SELECT * FROM workshop WHERE owner_id=? ORDER BY title,id LIMIT ? OFFSET ?",user.id(),size,page*size);
     }
     @GetMapping("/{id}") @PreAuthorize("hasRole('INSTRUCTOR')") public Object detail(@PathVariable UUID id,@AuthenticationPrincipal AuthService.Actor user) {
         catalog.requireOwner(id,user);var w=db.one("SELECT * FROM workshop WHERE id=?",id);
-        w.put("scenarios",db.jdbc.queryForList("SELECT * FROM scenario WHERE workshop_id=? ORDER BY title",id));
-        w.put("materials",db.jdbc.queryForList("SELECT id,filename,status FROM material WHERE workshop_id=? AND deleted=FALSE ORDER BY filename,id",id));return w;
+        w.put("scenarios",db.query("SELECT * FROM scenario WHERE workshop_id=? ORDER BY title",id));
+        w.put("materials",db.query("SELECT id,filename,status FROM material WHERE workshop_id=? AND deleted=FALSE ORDER BY filename,id",id));return w;
     }
     @PatchMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) @Transactional @PreAuthorize("hasRole('INSTRUCTOR')")
     public void edit(@PathVariable UUID id,@AuthenticationPrincipal AuthService.Actor user,@Valid @RequestBody Edit body) {
         catalog.requireOwner(id,user);
-        db.jdbc.update("UPDATE workshop SET title=?,description=?,topic=?,difficulty=?,published=? WHERE id=?",body.title(),body.description(),body.topic(),body.difficulty(),body.published(),id);
+        db.update("UPDATE workshop SET title=?,description=?,topic=?,difficulty=?,published=? WHERE id=?",body.title(),body.description(),body.topic(),body.difficulty(),body.published(),id);
     }
 }

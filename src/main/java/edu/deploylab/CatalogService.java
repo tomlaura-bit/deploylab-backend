@@ -33,19 +33,19 @@ public class CatalogService {
     public CatalogService(Db db) {this.db=db;}
     public List<Map<String,Object>> list(String topic,String difficulty,String skill,int page,int size) {
         if(page<0 || page>10000 || size<1 || size>100) throw new ApiException(400,"Paginación inválida");
-        return db.jdbc.queryForList("SELECT w.* FROM workshop w WHERE published=TRUE AND (?='' OR LOWER(topic)=LOWER(?)) AND (?='' OR difficulty=?) AND (?='' OR EXISTS (SELECT 1 FROM workshop_skill ws JOIN skill s ON s.id=ws.skill_id WHERE ws.workshop_id=w.id AND LOWER(s.name)=LOWER(?))) ORDER BY title,id LIMIT ? OFFSET ?",
+        return db.query("SELECT w.* FROM workshop w WHERE published=TRUE AND (?='' OR LOWER(topic)=LOWER(?)) AND (?='' OR difficulty=?) AND (?='' OR EXISTS (SELECT 1 FROM workshop_skill ws JOIN skill s ON s.id=ws.skill_id WHERE ws.workshop_id=w.id AND LOWER(s.name)=LOWER(?))) ORDER BY title,id LIMIT ? OFFSET ?",
             topic,topic,difficulty,difficulty,skill,skill,size,page*size);
     }
     public Map<String,Object> workshop(UUID id) {
         var w=db.one("SELECT * FROM workshop WHERE id=? AND published=TRUE",id);
-        w.put("scenarios",db.jdbc.queryForList("SELECT id FROM scenario WHERE workshop_id=? ORDER BY title",id)
+        w.put("scenarios",db.query("SELECT id FROM scenario WHERE workshop_id=? ORDER BY title",id)
             .stream().map(row->scenario(Db.id(row,"id"))).toList());
-        w.put("skills",db.jdbc.queryForList("SELECT s.* FROM skill s JOIN workshop_skill ws ON ws.skill_id=s.id WHERE ws.workshop_id=?",id));
+        w.put("skills",db.query("SELECT s.* FROM skill s JOIN workshop_skill ws ON ws.skill_id=s.id WHERE ws.workshop_id=?",id));
         return w;
     }
     public Map<String,Object> scenario(UUID id) {
         var s=db.one("SELECT s.id,s.workshop_id,s.title,s.description,s.evidence FROM scenario s JOIN workshop w ON w.id=s.workshop_id WHERE s.id=? AND w.published=TRUE",id);
-        s.put("actions",db.jdbc.queryForList("SELECT a.code,a.label FROM scenario_action a JOIN scenario_step p ON p.id=a.step_id WHERE p.scenario_id=? ORDER BY a.label",id));
+        s.put("actions",db.query("SELECT a.code,a.label FROM scenario_action a JOIN scenario_step p ON p.id=a.step_id WHERE p.scenario_id=? ORDER BY a.label",id));
         return s;
     }
     @Transactional
@@ -55,19 +55,19 @@ public class CatalogService {
         List<Template> templates=r.templates().stream().map(key->TEMPLATES.stream().filter(t->t.key().equals(key)).findFirst()
             .orElseThrow(()->new ApiException(400,"Plantilla desconocida"))).toList();
         UUID id=UUID.randomUUID();
-        db.jdbc.update("INSERT INTO workshop(id,title,description,topic,difficulty,owner_id) VALUES (?,?,?,?,?,?)",id,r.title(),r.description(),r.topic(),r.difficulty(),actor.id());
+        db.update("INSERT INTO workshop(id,title,description,topic,difficulty,owner_id) VALUES (?,?,?,?,?,?)",id,r.title(),r.description(),r.topic(),r.difficulty(),actor.id());
         templates.forEach(t->addScenario(id,t));
         return id;
     }
     void addScenario(UUID workshopId,Template t) {
         UUID sid=UUID.randomUUID(),step=UUID.randomUUID();
         UUID skill=Db.id(db.one("SELECT id FROM skill WHERE name=?",t.skill()),"id");
-        db.jdbc.update("INSERT INTO scenario(id,workshop_id,title,description,template_key,evidence,hint,explanation,skill_id) VALUES (?,?,?,?,?,?,?,?,?)",
+        db.update("INSERT INTO scenario(id,workshop_id,title,description,template_key,evidence,hint,explanation,skill_id) VALUES (?,?,?,?,?,?,?,?,?)",
             sid,workshopId,t.title(),t.description(),t.key(),t.evidence(),t.hint(),t.explanation(),skill);
-        db.jdbc.update("INSERT INTO scenario_step(id,scenario_id,position,title) VALUES (?,?,1,'Diagnosticar y corregir')",step,sid);
-        db.jdbc.update("INSERT INTO scenario_action(id,step_id,code,label,correct) VALUES (?,?,?,?,TRUE)",UUID.randomUUID(),step,t.correctAction(),t.correctLabel());
-        db.jdbc.update("INSERT INTO scenario_action(id,step_id,code,label,correct) VALUES (?,?,?,?,FALSE)",UUID.randomUUID(),step,t.wrongAction(),t.wrongLabel());
-        db.jdbc.update("INSERT INTO workshop_skill(workshop_id,skill_id) VALUES (?,?)",workshopId,skill);
+        db.update("INSERT INTO scenario_step(id,scenario_id,position,title) VALUES (?,?,1,'Diagnosticar y corregir')",step,sid);
+        db.update("INSERT INTO scenario_action(id,step_id,code,label,correct) VALUES (?,?,?,?,TRUE)",UUID.randomUUID(),step,t.correctAction(),t.correctLabel());
+        db.update("INSERT INTO scenario_action(id,step_id,code,label,correct) VALUES (?,?,?,?,FALSE)",UUID.randomUUID(),step,t.wrongAction(),t.wrongLabel());
+        db.update("INSERT INTO workshop_skill(workshop_id,skill_id) VALUES (?,?)",workshopId,skill);
     }
     public void requireOwner(UUID workshop,AuthService.Actor actor) {
         actor.instructor(); var w=db.one("SELECT owner_id FROM workshop WHERE id=?",workshop);

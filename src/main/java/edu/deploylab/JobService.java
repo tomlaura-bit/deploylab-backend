@@ -9,7 +9,7 @@ public class JobService {
     public JobService(Db db) {this.db=db;}
     public UUID enqueue(UUID owner,String kind,String payload) {
         UUID id=UUID.randomUUID();
-        db.jdbc.update("INSERT INTO background_job(id,owner_id,kind,state,payload) VALUES (?,?,?,'PENDING',?)",id,owner,kind,payload);
+        db.update("INSERT INTO background_job(id,owner_id,kind,state,payload) VALUES (?,?,?,'PENDING',?)",id,owner,kind,payload);
         return id;
     }
     public Map<String,Object> owned(UUID id,AuthService.Actor user) {return db.one("SELECT * FROM background_job WHERE id=? AND owner_id=?",id,user.id());}

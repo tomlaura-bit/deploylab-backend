@@ -45,9 +45,9 @@ Una práctica personal nunca se convierte implícitamente en entrega. Los intent
 
 ## Arquitectura y tecnologías
 
-El proyecto usa Java 21, Spring Boot 3.5.7, Spring MVC, Spring Security, Spring Data JPA, JDBC, Bean Validation, Flyway, PostgreSQL 17, Spring Mail, AWS SDK S3, Springdoc, JUnit 5, MockMvc y JaCoCo. Maven Wrapper evita depender de una instalación global de Maven.
+El proyecto usa Java 21, Spring Boot 3.5.7, Spring MVC, Spring Security, Spring Data JPA, Bean Validation, Flyway, PostgreSQL 17, Spring Mail, AWS SDK S3, Springdoc, JUnit 5, MockMvc y JaCoCo. Maven Wrapper evita depender de una instalación global de Maven.
 
-La API sigue Controller → Service → Repository/persistencia. Los controladores reciben DTO, validan el contrato y delegan. Los servicios contienen permisos, transacciones y reglas. Las entidades JPA expresan relaciones, restricciones e índices; los repositorios Spring Data ofrecen consultas tipadas. Los servicios existentes usan `JdbcTemplate` para SQL explícito mientras se completa una migración gradual hacia repositorios, sin duplicar el esquema: ambas rutas operan sobre las tablas creadas por Flyway.
+La API sigue Controller → Service → Repository/persistencia. Los controladores reciben DTO, validan el contrato y delegan. Los servicios contienen permisos, transacciones y reglas. Las entidades JPA expresan relaciones, restricciones e índices; los repositorios Spring Data ofrecen consultas tipadas. Las consultas especializadas pasan por un repositorio nativo basado en `EntityManager`, por lo que los servicios no dependen de `JdbcTemplate`. Flyway conserva el control exclusivo de la estructura del esquema.
 
 ```text
 src/main/java/edu/deploylab/
@@ -151,7 +151,7 @@ Antes de entregar deben completarse los nombres del equipo y registrar en GitHub
 
 El backend no incluye frontend, recuperación de contraseña, verificación de correo ni administración general de roles. Los escenarios usan plantillas seguras y no ejecutan código arbitrario. El PDF local valida tamaño, nombre y cabecera, pero no incorpora antivirus. S3 y SMTP tienen manejo de indisponibilidad y pruebas con dobles; requieren credenciales externas para una validación real.
 
-El siguiente crecimiento razonable es completar el uso de repositorios JPA en todos los servicios, desplegar en Render o AWS con PostgreSQL administrado, guardar secretos en el proveedor, añadir observabilidad y construir el cliente web. La implementación actual prioriza un núcleo transaccional reproducible y deja esas extensiones aisladas.
+El siguiente crecimiento razonable es reemplazar gradualmente las consultas nativas más complejas por proyecciones Spring Data, usar PostgreSQL administrado también en AWS, añadir observabilidad y construir el cliente web. La implementación actual prioriza un núcleo transaccional reproducible y deja esas extensiones aisladas.
 
 ## Licencia y referencias
 
