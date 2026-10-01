@@ -11,6 +11,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 
 @RestControllerAdvice
 public class ApiErrors {
@@ -25,6 +26,8 @@ public class ApiErrors {
     ResponseEntity<ErrorResponse> conflict(Exception e,HttpServletRequest req) { return error(409,"El registro ya existe o viola una relación de datos",req); }
     @ExceptionHandler(NoResourceFoundException.class)
     ResponseEntity<ErrorResponse> notFound(Exception e,HttpServletRequest req) { return error(404,"Recurso no encontrado",req); }
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    ResponseEntity<ErrorResponse> denied(Exception e,HttpServletRequest req) { return error(403,"Acceso denegado",req); }
     @ExceptionHandler(IllegalStateException.class)
     ResponseEntity<ErrorResponse> state(IllegalStateException e,HttpServletRequest req) { return error(409,e.getMessage(),req); }
     @ExceptionHandler(Exception.class)

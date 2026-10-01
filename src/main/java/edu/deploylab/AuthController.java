@@ -1,5 +1,6 @@
 package edu.deploylab;
 
+import edu.deploylab.dto.*;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -7,16 +8,16 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping({"/auth","/api/auth"})
 public class AuthController {
-    private final AuthService auth;
-    public AuthController(AuthService auth) { this.auth=auth; }
+    private final AuthService auth; private final ApiMapper mapper;
+    public AuthController(AuthService auth,ApiMapper mapper) {this.auth=auth;this.mapper=mapper;}
     @PostMapping("/register") @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @io.swagger.v3.oas.annotations.security.SecurityRequirements
-    public AuthService.Actor register(@Valid @RequestBody AuthService.Register body) { return auth.register(body); }
+    public UserResponse register(@Valid @RequestBody RegisterRequest body) {return mapper.user(auth.register(mapper.register(body)));}
     @PostMapping("/login") @io.swagger.v3.oas.annotations.security.SecurityRequirements
-    public AuthService.Session login(@Valid @RequestBody AuthService.Login body) { return auth.login(body); }
+    public AuthSessionResponse login(@Valid @RequestBody LoginRequest body) {return mapper.session(auth.login(mapper.login(body)));}
     @PostMapping("/refresh") @io.swagger.v3.oas.annotations.security.SecurityRequirements
-    public AuthService.Session refresh(@Valid @RequestBody AuthService.Refresh body) { return auth.refresh(body); }
-    @GetMapping("/me") public AuthService.Actor me(@AuthenticationPrincipal AuthService.Actor user) { return user; }
+    public AuthSessionResponse refresh(@Valid @RequestBody RefreshTokenRequest body) {return mapper.session(auth.refresh(new AuthService.Refresh(body.refreshToken())));}
+    @GetMapping("/me") public UserResponse me(@AuthenticationPrincipal AuthService.Actor user) {return mapper.user(user);}
     @PostMapping("/logout") @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
     public void logout(@RequestHeader("Authorization") String token) { auth.logout(token.substring(7)); }
 }
