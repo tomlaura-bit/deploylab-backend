@@ -18,9 +18,10 @@ Este repositorio contiene el backend completo: API REST, seguridad, modelo de da
 6. [Eventos y procesos asíncronos](#eventos-y-procesos-asíncronos)
 7. [API](#api)
 8. [Ejecución local](#ejecución-local)
-9. [Pruebas y calidad](#pruebas-y-calidad)
-10. [Gestión del proyecto](#gestión-del-proyecto)
-11. [Límites y trabajo futuro](#límites-y-trabajo-futuro)
+9. [Despliegue](#despliegue)
+10. [Pruebas y calidad](#pruebas-y-calidad)
+11. [Gestión del proyecto](#gestión-del-proyecto)
+12. [Límites y trabajo futuro](#límites-y-trabajo-futuro)
 
 ## Problema y objetivos
 
@@ -130,6 +131,14 @@ Requisitos: Java 21 y PostgreSQL 17. En Windows, desde la raíz:
 El script inicia una base aislada en `data/postgres`, normalmente en el puerto 55440, y guarda las credenciales locales en un archivo excluido de Git. Para detenerla: `.\scripts\Stop-Local.ps1`. Para ejecutar solo el núcleo: `.\scripts\Start-Local.ps1 -CoreOnly`.
 
 Con Docker, copia `.env.example` a `.env`, cambia secretos y ejecuta `docker compose up --build`. Compose incluye PostgreSQL y Mailpit. Las variables principales son `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `CORS_ORIGIN`, `INSTRUCTOR_EMAIL`, `INSTRUCTOR_PASSWORD`, `MAIL_ENABLED`, variables `SMTP_*`, `S3_BUCKET` y `AWS_REGION`. En un entorno real, `JWT_SECRET` debe contener al menos 32 bytes aleatorios.
+
+## Despliegue
+
+`render.yaml` define un Blueprint con la API Docker y PostgreSQL 17 administrado. Render obtiene por separado host, puerto, base, usuario y contraseña, mientras genera los secretos de JWT y del instructor. Después de conectar este repositorio en **New → Blueprint**, la comprobación pública queda en `/actuator/health` y Swagger en `/swagger-ui/index.html`.
+
+Para AWS Academy, una instancia EC2 con Amazon Linux 2023 puede usar `scripts/aws-ec2-user-data.sh` como *user data*. El script instala Docker, clona la rama principal pública, genera secretos dentro del servidor, levanta PostgreSQL en una red privada de Docker, construye la API y publica únicamente el puerto HTTP 80. Los datos quedan en el volumen `deploylab-postgres-data`; el registro de arranque se guarda en `/var/log/deploylab-bootstrap.log`. El grupo de seguridad de la instancia debe permitir TCP 80 desde la dirección desde la que se probará la API.
+
+`compose.aws.yml` ofrece la misma topología para un servidor Linux que ya tenga Docker Compose. Requiere un `.env` con `DB_PASSWORD`, `JWT_SECRET` e `INSTRUCTOR_PASSWORD`. Ningún secreto se almacena en Git.
 
 ## Pruebas y calidad
 
