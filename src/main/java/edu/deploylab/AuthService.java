@@ -7,6 +7,7 @@ import java.util.*;
 import io.jsonwebtoken.JwtException;
 import jakarta.validation.constraints.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +25,12 @@ public class AuthService {
     private final Db db;
     private final PasswordEncoder passwords;
     private final JwtService jwt;
+    private final ApplicationEventPublisher events;
     private final Duration refreshDuration;
     private final SecureRandom random=new SecureRandom();
     private final String dummyHash;
-    public AuthService(Db db,PasswordEncoder passwords,JwtService jwt,@Value("${app.jwt-refresh-days}") long refreshDays) {
-        this.db=db; this.passwords=passwords; this.jwt=jwt; this.refreshDuration=Duration.ofDays(refreshDays);
+    public AuthService(Db db,PasswordEncoder passwords,JwtService jwt,ApplicationEventPublisher events,@Value("${app.jwt-refresh-days}") long refreshDays) {
+        this.db=db; this.passwords=passwords; this.jwt=jwt; this.events=events; this.refreshDuration=Duration.ofDays(refreshDays);
         this.dummyHash=passwords.encode("constant-timing-dummy-password");
     }
     @Transactional
@@ -37,7 +39,9 @@ public class AuthService {
         UUID id=UUID.randomUUID(); String email=r.email().trim().toLowerCase(Locale.ROOT);
         db.jdbc.update("INSERT INTO app_user(id,name,email,password_hash,role) VALUES (?,?,?,?,'STUDENT')",
             id,r.name().trim(),email,passwords.encode(r.password()));
-        return new Actor(id,r.name().trim(),email,"STUDENT");
+        var actor=new Actor(id,r.name().trim(),email,"STUDENT");
+        events.publishEvent(new UserRegisteredEvent(id,email,Instant.now()));
+        return actor;
     }
     @Transactional
     public Session login(Login r) {

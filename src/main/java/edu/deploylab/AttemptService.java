@@ -2,12 +2,13 @@ package edu.deploylab;
 
 import java.util.*;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AttemptService {
-    private final Db db; private final CatalogService catalog; private final SimulationEngine engine;
-    public AttemptService(Db db,CatalogService catalog,SimulationEngine engine) {this.db=db;this.catalog=catalog;this.engine=engine;}
+    private final Db db; private final CatalogService catalog; private final SimulationEngine engine; private final ApplicationEventPublisher events;
+    public AttemptService(Db db,CatalogService catalog,SimulationEngine engine,ApplicationEventPublisher events) {this.db=db;this.catalog=catalog;this.engine=engine;this.events=events;}
     @Transactional public UUID start(AuthService.Actor user,UUID scenario) {
         catalog.scenario(scenario); UUID id=UUID.randomUUID();
         db.jdbc.update("INSERT INTO attempt(id,user_id,scenario_id,state) VALUES (?,?,?,'IN_PROGRESS')",id,user.id(),scenario);
@@ -63,6 +64,7 @@ public class AttemptService {
         String explanation=db.one("SELECT explanation FROM scenario WHERE id=?",a.get("scenario_id")).get("explanation").toString();
         db.jdbc.update("INSERT INTO attempt_evaluation(attempt_id,score,mistakes,hints,solved,explanation) VALUES (?,?,?,?,?,?)",id,score,mistakes,hints,solved,explanation);
         db.jdbc.update("UPDATE attempt SET finalized=TRUE,score=?,completed_at=CURRENT_TIMESTAMP WHERE id=?",score,id);
+        events.publishEvent(new AttemptFinishedEvent(id,user.id(),score,solved,java.time.Instant.now()));
         return detail(id,user);
     }
     @Transactional public Object hint(UUID id,AuthService.Actor user) {

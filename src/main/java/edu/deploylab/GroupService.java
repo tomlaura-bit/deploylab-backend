@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import jakarta.validation.constraints.*;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -11,8 +12,8 @@ public class GroupService {
     public record NewGroup(@NotBlank @Size(max=120) String name) {}
     public record Member(@NotNull UUID userId) {}
     public record Assign(@NotNull UUID workshopId,@NotNull @Future OffsetDateTime dueAt) {}
-    private final Db db; private final JobService jobs; private final CatalogService catalog;
-    public GroupService(Db db,JobService jobs,CatalogService catalog) {this.db=db;this.jobs=jobs;this.catalog=catalog;}
+    private final Db db; private final JobService jobs; private final CatalogService catalog; private final ApplicationEventPublisher events;
+    public GroupService(Db db,JobService jobs,CatalogService catalog,ApplicationEventPublisher events) {this.db=db;this.jobs=jobs;this.catalog=catalog;this.events=events;}
     public Map<String,Object> owner(UUID group,AuthService.Actor user) {
         user.instructor(); return db.one("SELECT * FROM study_group WHERE id=? AND instructor_id=?",group,user.id());
     }
@@ -56,6 +57,7 @@ public class GroupService {
             db.jdbc.update("INSERT INTO notification(id,user_id,message) VALUES (?,?,?)",UUID.randomUUID(),uid,message);
             jobs.enqueue(uid,"EMAIL",message);
         }
+        events.publishEvent(new AssignmentCreatedEvent(id,group,r.workshopId(),java.time.Instant.now()));
         return id;
     }
     public record EditGroup(@NotBlank @Size(max=120) String name,@NotNull Boolean archived) {}
