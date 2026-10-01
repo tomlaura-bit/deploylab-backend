@@ -1,0 +1,24 @@
+name: Funcionalidad
+description: Registrar una historia o mejora de DeployLab
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema o necesidad
+      description: Explica quién necesita el cambio y por qué.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      description: Enumera resultados observables y casos de error.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Pruebas previstas
+      description: Indica cómo se verificará el cambio.

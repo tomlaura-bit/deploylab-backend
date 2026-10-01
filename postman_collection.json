@@ -1,0 +1,2300 @@
+{
+  "info": {
+    "name": "DeployLab Backend - API completa",
+    "description": "Colección de entrega con todas las rutas del backend, autenticación Bearer, ejemplos y variables encadenadas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "studentEmail",
+      "value": "student@deploylab.test",
+      "type": "string"
+    },
+    {
+      "key": "studentPassword",
+      "value": "StudentPassword123!",
+      "type": "string"
+    },
+    {
+      "key": "teacherEmail",
+      "value": "teacher@deploylab.test",
+      "type": "string"
+    },
+    {
+      "key": "teacherPassword",
+      "value": "TestingOnly123!",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "teacherToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "workshopId",
+      "value": "10000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "scenarioId",
+      "value": "20000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "attemptId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "groupId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "assignmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "materialId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Registrar estudiante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Registrar estudiante",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alumno Demo\",\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"DemoPassword123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar sesión de estudiante y guardar JWT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Iniciar sesión de estudiante y guardar JWT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.token) pm.collectionVariables.set('token', j.token);",
+                  "  if (j.refreshToken) pm.collectionVariables.set('refreshToken', j.refreshToken);",
+                  "  if (j.user.id) pm.collectionVariables.set('studentId', j.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rotar access y refresh token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/refresh",
+            "description": "Rotar access y refresh token",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.token) pm.collectionVariables.set('token', j.token);",
+                  "  if (j.refreshToken) pm.collectionVariables.set('refreshToken', j.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar la identidad autenticada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/me",
+            "description": "Consultar la identidad autenticada",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revocar access y refresh tokens",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/logout",
+            "description": "Revocar access y refresh tokens",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alias de login exigido por el núcleo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/login",
+            "description": "Alias de login exigido por el núcleo",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.token) pm.collectionVariables.set('token', j.token);",
+                  "  if (j.refreshToken) pm.collectionVariables.set('refreshToken', j.refreshToken);",
+                  "  if (j.user.id) pm.collectionVariables.set('studentId', j.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar sesión como instructor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Iniciar sesión como instructor",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"{{teacherPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.token) pm.collectionVariables.set('teacherToken', j.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Núcleo del simulador",
+      "item": [
+        {
+          "name": "Listar talleres publicados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/talleres?page=0&size=20",
+            "description": "Listar talleres publicados",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar taller, escenarios y evidencia",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/talleres/{{workshopId}}",
+            "description": "Consultar taller, escenarios y evidencia",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar intento del escenario",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/escenarios/{{scenarioId}}/intentos",
+            "description": "Iniciar intento del escenario",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('attemptId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar acción idempotente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/intentos/{{attemptId}}/acciones",
+            "description": "Registrar acción idempotente",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"FIX_URL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalizar y calcular evaluación",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/intentos/{{attemptId}}/finalizar",
+            "description": "Finalizar y calcular evaluación",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar historial propio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/intentos?page=0&size=20",
+            "description": "Listar historial propio",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar intento e historial",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/intentos/{{attemptId}}",
+            "description": "Consultar intento e historial",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Catálogo e instructor",
+      "item": [
+        {
+          "name": "Filtrar catálogo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/workshops?page=0&size=20&topic=&difficulty=&skill=",
+            "description": "Filtrar catálogo",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle de taller ampliado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/workshops/{{workshopId}}",
+            "description": "Detalle de taller ampliado",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle público de escenario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/scenarios/{{scenarioId}}",
+            "description": "Detalle público de escenario",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar plantillas de instructor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/templates",
+            "description": "Listar plantillas de instructor",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear taller desde plantillas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/workshops",
+            "description": "Crear taller desde plantillas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Taller API\",\n  \"description\": \"Práctica guiada\",\n  \"topic\": \"Backend\",\n  \"difficulty\": \"BEGINNER\",\n  \"templates\": [\n    \"API_URL\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('workshopId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar talleres propios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/instructor/workshops?page=0&size=20",
+            "description": "Listar talleres propios",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle privado del taller",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/instructor/workshops/{{workshopId}}",
+            "description": "Detalle privado del taller",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar y publicar taller",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/instructor/workshops/{{workshopId}}",
+            "description": "Editar y publicar taller",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Taller API\",\n  \"description\": \"Práctica guiada actualizada\",\n  \"topic\": \"Backend\",\n  \"difficulty\": \"BEGINNER\",\n  \"published\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Intentos ampliados",
+      "item": [
+        {
+          "name": "Iniciar práctica personal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/attempts",
+            "description": "Iniciar práctica personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scenarioId\": \"{{scenarioId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('attemptId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar intentos propios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/attempts?page=0&size=20",
+            "description": "Listar intentos propios",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle del intento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/attempts/{{attemptId}}",
+            "description": "Detalle del intento",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aplicar una acción",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/attempts/{{attemptId}}/actions",
+            "description": "Aplicar una acción",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"FIX_URL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Solicitar pista",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/attempts/{{attemptId}}/hint",
+            "description": "Solicitar pista",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalizar práctica",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/attempts/{{attemptId}}/finish",
+            "description": "Finalizar práctica",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar progreso por habilidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/progress",
+            "description": "Consultar progreso por habilidad",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar panel según rol",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/dashboard",
+            "description": "Consultar panel según rol",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Grupos y asignaciones",
+      "item": [
+        {
+          "name": "Crear grupo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/groups",
+            "description": "Crear grupo",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grupo Backend\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('groupId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar grupos del usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/groups",
+            "description": "Listar grupos del usuario",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar grupo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/groups/{{groupId}}",
+            "description": "Consultar grupo",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar o archivar grupo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/groups/{{groupId}}",
+            "description": "Editar o archivar grupo",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grupo Backend\",\n  \"archived\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Añadir miembro por UUID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/groups/{{groupId}}/members",
+            "description": "Añadir miembro por UUID",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{studentId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Añadir miembro por correo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/groups/{{groupId}}/members/by-email",
+            "description": "Añadir miembro por correo",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retirar miembro",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/groups/{{groupId}}/members/{{studentId}}",
+            "description": "Retirar miembro",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asignar taller con fecha límite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/groups/{{groupId}}/assignments",
+            "description": "Asignar taller con fecha límite",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workshopId\": \"{{workshopId}}\",\n  \"dueAt\": \"2030-12-15T23:59:00-05:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('assignmentId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estadísticas del grupo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/groups/{{groupId}}/statistics",
+            "description": "Estadísticas del grupo",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Solicitar reporte grupal",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/groups/{{groupId}}/reports",
+            "description": "Solicitar reporte grupal",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('jobId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar asignaciones visibles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/assignments?page=0&size=20",
+            "description": "Listar asignaciones visibles",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle de asignación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/assignments/{{assignmentId}}",
+            "description": "Detalle de asignación",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar entrega asignada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/assignments/{{assignmentId}}/attempts",
+            "description": "Iniciar entrega asignada",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scenarioId\": \"{{scenarioId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('attemptId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cambiar fecha límite",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/assignments/{{assignmentId}}",
+            "description": "Cambiar fecha límite",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dueAt\": \"2030-12-20T23:59:00-05:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar asignación",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/assignments/{{assignmentId}}",
+            "description": "Cancelar asignación",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar entregas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/assignments/{{assignmentId}}/submissions?page=0&size=20",
+            "description": "Listar entregas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revisar una entrega",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/assignments/{{assignmentId}}/submissions/{{attemptId}}",
+            "description": "Revisar una entrega",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Materiales",
+      "item": [
+        {
+          "name": "Listar materiales listos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/workshops/{{workshopId}}/materials",
+            "description": "Listar materiales listos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Subir PDF local",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/workshops/{{workshopId}}/materials/local",
+            "description": "Subir un PDF mediante multipart/form-data",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([201,400,401,403,404,413]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Solicitar carga firmada S3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/workshops/{{workshopId}}/materials",
+            "description": "Solicitar carga firmada S3",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filename\": \"guia.pdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('materialId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirmar archivo en S3",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/workshops/{{workshopId}}/materials/{{materialId}}/confirm",
+            "description": "Confirmar archivo en S3",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener URL de descarga",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/workshops/{{workshopId}}/materials/{{materialId}}/download",
+            "description": "Obtener URL de descarga",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Descargar PDF local",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/workshops/{{workshopId}}/materials/{{materialId}}/content",
+            "description": "Descargar PDF local",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retirar material",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/workshops/{{workshopId}}/materials/{{materialId}}",
+            "description": "Retirar material",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Trabajos y notificaciones",
+      "item": [
+        {
+          "name": "Solicitar reporte personal",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/reports",
+            "description": "Solicitar reporte personal",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300 && pm.response.text()) { const j=pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('jobId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar trabajos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/jobs?page=0&size=20",
+            "description": "Listar trabajos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar estado del trabajo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/jobs/{{jobId}}",
+            "description": "Consultar estado del trabajo",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Descargar CSV terminado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/jobs/{{jobId}}/download",
+            "description": "Descargar CSV terminado",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reintentar trabajo fallido",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/jobs/{{jobId}}/retry",
+            "description": "Reintentar trabajo fallido",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar notificaciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications?unreadOnly=false&page=0&size=20",
+            "description": "Listar notificaciones",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Marcar notificación como leída",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+            "description": "Marcar notificación como leída",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Marcar todas como leídas",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications/read-all",
+            "description": "Marcar todas como leídas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado HTTP válido', function () { pm.expect(pm.response.code).to.be.oneOf([200,201,202,204,400,401,403,404,409,413,503]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

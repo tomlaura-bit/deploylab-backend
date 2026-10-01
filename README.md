@@ -1,59 +1,125 @@
 # DeployLab Backend
 
-DeployLab es el backend de una plataforma educativa para practicar el diagnóstico de errores mediante escenarios simulados. Un estudiante analiza evidencia, registra acciones y recibe una evaluación. Un instructor crea talleres, organiza grupos, asigna actividades y revisa entregas.
+**Curso:** Desarrollo Basado en Plataformas (DBP), ciclo 2026-2  
+**Proyecto:** API para aprendizaje mediante simulación de incidentes  
+**Equipo:** Tom — completar apellidos y demás integrantes antes de la entrega
 
-Este repositorio contiene la API REST, el esquema de base de datos, pruebas automatizadas, documentación OpenAPI, una colección de Postman y scripts de demostración. No incluye frontend ni necesita servicios externos para ejecutar el flujo principal en local.
+DeployLab es una plataforma educativa donde un estudiante practica el diagnóstico de fallas de backend en escenarios controlados. Cada escenario presenta evidencia, acciones posibles y una explicación. El estudiante inicia un intento, registra decisiones y lo finaliza para obtener una evaluación persistida. Un instructor crea talleres, administra grupos, asigna actividades y revisa resultados.
 
-## 1. Funcionalidades
+Este repositorio contiene el backend completo: API REST, seguridad, modelo de datos, migraciones, motor transaccional, documentación OpenAPI, pruebas, colección de Postman y configuración local. No incluye una interfaz web.
 
-| Módulo | Funcionalidad implementada |
-|---|---|
-| Autenticación | Registro de estudiantes, login, sesión actual, logout, contraseñas BCrypt y tokens revocables con vencimiento |
-| Catálogo | Talleres publicados, filtros por tema/dificultad/habilidad, paginación, escenarios y acciones sin revelar respuestas |
-| Simulador | Intentos, eventos transaccionales, validación de estados, pistas, idempotencia y control de concurrencia |
-| Evaluación | Finalización explícita, nota persistida, explicación, historial ordenado y progreso por habilidad |
-| Instructor | Crear talleres desde plantillas, listar los propios, editar metadatos, publicar/despublicar y consultar materiales pendientes |
-| Grupos y miembros | Crear, consultar, renombrar, archivar/reactivar, añadir estudiantes por ID o correo y retirar miembros |
-| Asignaciones | Asignar taller, consultar tareas, cambiar plazo, cancelar e iniciar intentos vinculados a una asignación |
-| Revisión | Consultar entregas finalizadas, evaluación, eventos e indicador de entrega tardía |
-| Seguimiento | Panel por rol, progreso personal, estadísticas del grupo y separación de prácticas personales y entregas |
-| Materiales | Subir PDF a PostgreSQL, listar, descargar y retirar; flujo opcional de carga firmada a S3 |
-| Reportes | CSV personal y de grupo, procesamiento en segundo plano, estado, descarga y reintento de trabajos fallidos |
-| Notificaciones | Aviso interno al asignar taller, filtro de no leídas, paginación, marcar una o todas como leídas y correo opcional |
+## Contenido
 
-Las prácticas personales y las entregas de una asignación son conceptos distintos. Una entrega queda vinculada explícitamente mediante `assignment_id`; los intentos personales no aparecen en estadísticas ni reportes de un grupo.
+1. [Problema y objetivos](#problema-y-objetivos)
+2. [Solución y funciones](#solución-y-funciones)
+3. [Arquitectura y tecnologías](#arquitectura-y-tecnologías)
+4. [Modelo de datos](#modelo-de-datos)
+5. [Seguridad](#seguridad)
+6. [Eventos y procesos asíncronos](#eventos-y-procesos-asíncronos)
+7. [API](#api)
+8. [Ejecución local](#ejecución-local)
+9. [Pruebas y calidad](#pruebas-y-calidad)
+10. [Gestión del proyecto](#gestión-del-proyecto)
+11. [Límites y trabajo futuro](#límites-y-trabajo-futuro)
 
-## 2. Arquitectura y recorrido del código
+## Problema y objetivos
 
-Java 21, Spring Boot 3.5.7, PostgreSQL 17, Spring Security, JDBC (`JdbcTemplate`), Flyway, Bean Validation, Springdoc/OpenAPI, JUnit, MockMvc y JaCoCo. Maven Wrapper permite compilar sin instalar Maven por separado.
+Los conceptos de autenticación, autorización, contratos HTTP, conexión a datos e idempotencia suelen estudiarse por separado. Cuando aparece una falla real, el estudiante debe relacionar evidencia con una causa y elegir una corrección sin poner en riesgo un sistema en producción. DeployLab ofrece ese espacio de práctica con datos ficticios y estados reproducibles.
+
+El objetivo general es proporcionar una API segura para ejecutar y evaluar simulaciones de incidentes. Sus objetivos específicos son conservar el historial de decisiones, calcular una nota reproducible, separar prácticas personales de entregas, permitir seguimiento docente y demostrar patrones de backend como JWT, capas, persistencia relacional, eventos, concurrencia y manejo uniforme de errores.
+
+## Solución y funciones
+
+El núcleo solicitado cubre registro y login, consulta de talleres, inicio de intentos, registro de acciones y finalización. El backend amplía ese flujo con:
+
+- JWT de corta duración, refresh token rotatorio y logout con revocación.
+- Catálogo paginado y filtrable por tema, dificultad y habilidad.
+- Intentos con eventos ordenados, pistas, idempotencia y bloqueo de fila.
+- Evaluación final: `max(0, 100 - 10 × errores - 5 × pistas)` cuando el caso fue resuelto; cero si se entrega sin resolver.
+- Talleres de instructor, grupos, membresías, plazos, asignaciones y revisión de entregas.
+- Materiales PDF en PostgreSQL y una integración S3 opcional.
+- Notificaciones internas, correo opcional y reportes CSV procesados como trabajos.
+- Paneles de progreso personal y estadísticas de grupo.
+
+Una práctica personal nunca se convierte implícitamente en entrega. Los intentos de una tarea guardan su `assignment_id`, por lo que los reportes del grupo no mezclan trabajo privado del estudiante.
+
+## Arquitectura y tecnologías
+
+El proyecto usa Java 21, Spring Boot 3.5.7, Spring MVC, Spring Security, Spring Data JPA, JDBC, Bean Validation, Flyway, PostgreSQL 17, Spring Mail, AWS SDK S3, Springdoc, JUnit 5, MockMvc y JaCoCo. Maven Wrapper evita depender de una instalación global de Maven.
+
+La API sigue Controller → Service → Repository/persistencia. Los controladores reciben DTO, validan el contrato y delegan. Los servicios contienen permisos, transacciones y reglas. Las entidades JPA expresan relaciones, restricciones e índices; los repositorios Spring Data ofrecen consultas tipadas. Los servicios existentes usan `JdbcTemplate` para SQL explícito mientras se completa una migración gradual hacia repositorios, sin duplicar el esquema: ambas rutas operan sobre las tablas creadas por Flyway.
 
 ```text
-src/main/java/edu/deploylab/    Controladores, servicios, seguridad y motor
-src/main/resources/            Configuración y migraciones SQL
-src/test/java/edu/deploylab/    Pruebas de API, motor e integraciones
-scripts/                      Inicio, parada y demos locales
-docs/                        Postman, guion y evidencias
-.github/workflows/ci.yml       CI preparada para PostgreSQL
+src/main/java/edu/deploylab/
+├── *Controller.java       rutas y códigos HTTP
+├── *Service.java          casos de uso y transacciones
+├── dto/                   contratos de entrada y salida
+├── persistence/           entidades y repositorios JPA
+├── *Event.java            eventos de dominio
+└── SecurityConfig.java    JWT, roles, CORS y sesión stateless
+src/main/resources/db/migration/  evolución SQL V1–V7
+src/test/java/edu/deploylab/      pruebas de contrato, integración y motor
 ```
 
-La aplicación sigue una estructura sencilla por responsabilidades. Los controladores definen las rutas HTTP y validan las entradas; los servicios aplican permisos y reglas de negocio; `Db` concentra el acceso JDBC. PostgreSQL conserva usuarios, talleres, escenarios, intentos, eventos, evaluaciones, grupos, miembros, asignaciones, materiales, avisos y trabajos. El motor usa transacciones y bloqueos de fila.
+## Modelo de datos
 
-Para entender el proyecto por primera vez, este es un buen orden de lectura:
+Flyway crea y evoluciona la base. JPA usa `ddl-auto=none`, de modo que las entidades validan el modelo sin modificarlo automáticamente. Las asociaciones se cargan de forma diferida y las operaciones de intento usan transacciones y bloqueo pesimista.
 
-1. `CoreController` muestra el flujo mínimo público de autenticación, catálogo y simulación.
-2. `AuthService` explica cómo se crean usuarios y tokens.
-3. `CatalogService` contiene talleres, escenarios y plantillas iniciales.
-4. `AttemptService` implementa acciones, idempotencia, bloqueo y evaluación.
-5. `AssignmentService` relaciona grupos, tareas e intentos entregables.
-6. `GroupService`, `InstructorController` y `DashboardController` completan la gestión académica.
-7. `MaterialController`, `JobService` y `JobWorker` cubren archivos, reportes y correo en segundo plano.
-8. `src/main/resources/db/migration` permite reconstruir la evolución completa del esquema.
+```mermaid
+erDiagram
+    APP_USER ||--o{ AUTH_TOKEN : owns
+    APP_USER ||--o{ REFRESH_TOKEN : owns
+    APP_USER ||--o{ ATTEMPT : performs
+    APP_USER ||--o{ STUDY_GROUP : teaches
+    STUDY_GROUP ||--o{ MEMBERSHIP : contains
+    APP_USER ||--o{ MEMBERSHIP : joins
+    STUDY_GROUP ||--o{ ASSIGNMENT : receives
+    WORKSHOP ||--o{ ASSIGNMENT : assigned
+    WORKSHOP ||--o{ SCENARIO : contains
+    SCENARIO ||--o{ ATTEMPT : practiced
+    ASSIGNMENT ||--o{ ATTEMPT : submits
+    ATTEMPT ||--o{ ATTEMPT_EVENT : records
+    ATTEMPT ||--o| ATTEMPT_EVALUATION : produces
+    WORKSHOP ||--o{ MATERIAL : provides
+    APP_USER ||--o{ NOTIFICATION : receives
+```
 
-Las migraciones son incrementales: V1 crea el esquema; V2 asocia habilidades; V3 introduce el estado de materiales; V4 persiste evaluaciones; V5 ordena eventos; V6 añade asignaciones explícitas, archivado, cancelación y PDF locales. No se modificaron migraciones ya aplicadas. Los intentos anteriores a V6 mantienen `assignment_id=null`: no se atribuyen retrospectivamente a grupos.
+Las restricciones principales incluyen correo único, una membresía por usuario y grupo, una asignación de taller por grupo, una evaluación por intento, claves idempotentes únicas por intento y claves foráneas con borrado controlado.
 
-## 3. Ejecutar en Windows
+## Seguridad
 
-Requisitos: Java 21 y PostgreSQL 17 instalado. La primera compilación necesita Internet para descargar dependencias. Desde esta carpeta en PowerShell:
+El registro público siempre crea un `STUDENT`; no acepta un rol enviado por el cliente. Las contraseñas se guardan con BCrypt. El login emite un JWT firmado con `sub`, `jti`, correo, rol, fecha de emisión y vencimiento de 15 minutos. Su hash también se registra para permitir revocación. El refresh token es aleatorio, dura siete días, se almacena como SHA-256 y rota en cada uso; reutilizar uno anterior devuelve 401. El logout revoca la sesión y todos los refresh tokens activos del usuario.
+
+Spring Security trabaja sin sesión HTTP. `UserDetailsService` integra usuarios persistidos y `@PreAuthorize` protege operaciones de instructor o estudiante. Los servicios además comprueban propiedad y membresía; pedir un intento ajeno responde 404 para no revelar su existencia. CORS se configura mediante `CORS_ORIGIN`.
+
+Los errores tienen un mismo DTO: `timestamp`, `status`, `error`, `message` y `path`. El `ControllerAdvice` trata validación, JSON inválido, recursos ausentes, conflictos, permisos, archivos grandes y excepciones del dominio. Existen excepciones específicas para credenciales, acceso, recurso ausente, duplicidad, operación inválida, plazo vencido, almacenamiento y petición inválida.
+
+## Eventos y procesos asíncronos
+
+Después de confirmar una transacción se publican `UserRegisteredEvent`, `AssignmentCreatedEvent` y `AttemptFinishedEvent`. Tres listeners con `@Async` los procesan en un `ThreadPoolTaskExecutor` de 2 a 8 hilos y cola de 100 tareas. Los logs incluyen tipo de evento, identificadores y fecha, sin contraseñas ni tokens.
+
+La asignación genera inmediatamente una notificación interna y encola un trabajo de correo. `JobWorker` procesa correos y reportes CSV con reintentos; si SMTP está desactivado, la tarea falla de manera controlada sin revertir la asignación. El envío real usa Spring Mail cuando `MAIL_ENABLED=true`.
+
+## API
+
+El flujo principal usa estas rutas:
+
+| Método | Ruta | Resultado |
+|---|---|---|
+| POST | `/auth/register` | Crea estudiante, 201 |
+| POST | `/auth/login` o `/login` | JWT, refresh token y usuario |
+| POST | `/auth/refresh` | Rota tokens |
+| GET | `/talleres` | Catálogo publicado |
+| GET | `/talleres/{id}` | Escenarios y evidencia |
+| POST | `/escenarios/{id}/intentos` | Inicia intento, 201 |
+| POST | `/intentos/{id}/acciones` | Registra evento con `Idempotency-Key` |
+| POST | `/intentos/{id}/finalizar` | Persiste evaluación e historial |
+
+Los módulos bajo `/api` exponen talleres, plantillas, intentos, progreso, grupos, miembros, asignaciones, entregas, materiales, trabajos, reportes, notificaciones y panel. Los listados principales aceptan `page` y `size`; catálogo también acepta `topic`, `difficulty` y `skill`. Swagger separa las especificaciones `core` y `modules` en `http://localhost:8080/swagger-ui/index.html`.
+
+## Ejecución local
+
+Requisitos: Java 21 y PostgreSQL 17. En Windows, desde la raíz:
 
 ```powershell
 .\scripts\Start-Local.ps1
@@ -61,195 +127,34 @@ Requisitos: Java 21 y PostgreSQL 17 instalado. La primera compilación necesita 
 .\scripts\Demo-Modules.ps1
 ```
 
-La API escucha en `http://127.0.0.1:8080`. El script usa una base aislada en `data/postgres`, puerto `55440`, sin modificar las bases del servicio PostgreSQL existente. Conserva los datos entre reinicios. El instructor inicial y las credenciales aleatorias quedan en `data/local-config.json`, excluido de Git. Las demos crean datos ficticios nuevos y no imprimen tokens ni contraseñas.
+El script inicia una base aislada en `data/postgres`, normalmente en el puerto 55440, y guarda las credenciales locales en un archivo excluido de Git. Para detenerla: `.\scripts\Stop-Local.ps1`. Para ejecutar solo el núcleo: `.\scripts\Start-Local.ps1 -CoreOnly`.
 
-[Swagger interactivo](http://localhost:8080/swagger-ui/index.html): selecciona **core** para el flujo mínimo o **modules** para la API ampliada bajo `/api`. Las especificaciones están en `/v3/api-docs/core` y `/v3/api-docs/modules`. Inicia sesión, copia el valor de `token` y pégalo en **Authorize**. El registro público siempre crea estudiantes; las credenciales del instructor están en el archivo local indicado.
+Con Docker, copia `.env.example` a `.env`, cambia secretos y ejecuta `docker compose up --build`. Compose incluye PostgreSQL y Mailpit. Las variables principales son `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `CORS_ORIGIN`, `INSTRUCTOR_EMAIL`, `INSTRUCTOR_PASSWORD`, `MAIL_ENABLED`, variables `SMTP_*`, `S3_BUCKET` y `AWS_REGION`. En un entorno real, `JWT_SECRET` debe contener al menos 32 bytes aleatorios.
 
-```powershell
-# Detener conservando datos
-.\scripts\Stop-Local.ps1
-# Iniciar solo el núcleo
-.\scripts\Start-Local.ps1 -CoreOnly
-# Puerto HTTP alternativo
-.\scripts\Start-Local.ps1 -ApiPort 8085
-.\scripts\Demo.ps1 -BaseUrl http://127.0.0.1:8085
-```
-
-Detén la instancia antes de cambiar de modo. Los módulos están **habilitados por defecto** (`EXTRAS_ENABLED=true`). El modo núcleo conserva tablas, pero no expone controladores opcionales ni ejecuta el trabajador de reportes. El puerto de PostgreSQL debe coincidir con el guardado al inicializar la base.
-
-## 4. API principal
-
-Todas las rutas salvo registro y login requieren `Authorization: Bearer <token>`. Los cuerpos usan campos en inglés; las respuestas JDBC conservan nombres SQL como `created_at`.
-
-| Método | Ruta | Uso |
-|---|---|---|
-| POST | `/auth/register` | `name`, `email`, `password`; crea estudiante |
-| POST | `/login` | `email`, `password`; devuelve token y usuario |
-| GET | `/talleres` | Filtros `topic`, `difficulty`, `skill`; `page`, `size` |
-| GET | `/talleres/{id}` | Taller, escenarios, evidencias y acciones |
-| POST | `/escenarios/{id}/intentos` | Iniciar práctica personal; sin cuerpo |
-| POST | `/intentos/{id}/acciones` | `{ "code": "FIX_URL" }` y `Idempotency-Key: <UUID>` |
-| POST | `/intentos/{id}/finalizar` | Cerrar y devolver evaluación e historial; sin cuerpo |
-
-Estas siete rutas forman el flujo mínimo de la aplicación. `/auth/login` es alias de `/login`. `/auth/me`, `/auth/logout`, `/intentos` y `/intentos/{id}` completan sesión e historial. También existen los alias `/api/auth/*` y `/api/attempts/*`, usados por los módulos ampliados.
-
-Taller inicial: `10000000-0000-0000-0000-000000000001`. Escenarios: API mal configurada, credenciales ficticias incorrectas y permisos insuficientes. Sus IDs se consultan en el detalle del taller.
-
-## 5. Estados y evaluación
-
-1. Inicio: `state=IN_PROGRESS`, `finalized=false`, `score=0`.
-2. Acción incorrecta permitida: registra evento, suma un error y mantiene el estado.
-3. Acción correcta: registra evento y cambia a `RESOLVED`. Todavía no calcula la nota.
-4. Finalizar exige una acción como mínimo, persiste evaluación y fecha de cierre. Entregar sin resolver produce cero puntos.
-5. El cierre rechaza acciones nuevas. Repetir finalizar devuelve la misma evaluación y fecha.
-
-Nota resuelta: `max(0, 100 - 10 × errores - 5 × pistas)`. Sin resolver: 0. Repetir una pista no penaliza nuevamente. La fórmula se encuentra aislada en `SimulationEngine`, por lo que puede cambiarse sin modificar el controlador HTTP.
-
-`state` describe el incidente; `finalized` describe la entrega. Sin resolver puede conservar `IN_PROGRESS` con `finalized=true` y `evaluation.solved=false`. Los eventos mantienen `score=0`; la nota oficial se calcula al finalizar.
-
-El motor usa tres plantillas predefinidas. No ejecuta código arbitrario ni se conecta a las aplicaciones representadas. El instructor edita metadatos del taller; la API no permite alterar respuestas del escenario después de crearlo.
-
-## 6. Rutas de los módulos ampliados
-
-Todas requieren autenticación. Las operaciones de instructor comprueban rol y propiedad del recurso.
-
-| Módulo | Rutas principales |
-|---|---|
-| Catálogo | `GET/POST /api/workshops`, `GET /api/workshops/{id}`, `GET /api/scenarios/{id}`, `GET /api/templates` |
-| Instructor | `GET /api/instructor/workshops`, `GET/PATCH /api/instructor/workshops/{id}` |
-| Grupos | `GET/POST /api/groups`, `GET/PATCH /api/groups/{id}` |
-| Miembros | `POST /api/groups/{id}/members`, `POST /api/groups/{id}/members/by-email`, `DELETE /api/groups/{id}/members/{member}` |
-| Asignar taller | `POST /api/groups/{id}/assignments` |
-| Tareas | `GET /api/assignments`, `GET/PATCH/DELETE /api/assignments/{id}` |
-| Intento asignado | `POST /api/assignments/{id}/attempts` |
-| Revisión | `GET /api/assignments/{id}/submissions`, `GET /api/assignments/{id}/submissions/{attempt}` |
-| Práctica | `GET/POST /api/attempts`, `GET /api/attempts/{id}`, `POST /api/attempts/{id}/actions`, `/hint`, `/finish` |
-| Seguimiento | `GET /api/dashboard`, `GET /api/progress`, `GET /api/groups/{id}/statistics` |
-| Materiales | `GET /api/workshops/{id}/materials`, `POST /api/workshops/{id}/materials/local` |
-| Archivo | `GET /api/workshops/{id}/materials/{material}/content`, `GET .../{material}/download`, `DELETE .../{material}` |
-| S3 opcional | `POST /api/workshops/{id}/materials`, `POST .../{material}/confirm` |
-| Reportes | `POST /api/reports`, `POST /api/groups/{id}/reports` |
-| Trabajos | `GET /api/jobs`, `GET /api/jobs/{id}`, `GET /api/jobs/{id}/download`, `POST /api/jobs/{id}/retry` |
-| Avisos | `GET /api/notifications`, `PATCH /api/notifications/{id}/read`, `PATCH /api/notifications/read-all` |
-
-Listados de talleres, intentos, asignaciones, entregas, trabajos y avisos aceptan `page` y `size` (0 y 20 por defecto, máximo 100). Avisos admite `unreadOnly=true`. Grupos y miembros se devuelven completos.
-
-### Ejemplo de taller y asignación
-
-Como instructor, crear con `POST /api/workshops`:
-
-```json
-{
-  "title": "Diagnóstico de servicios",
-  "description": "Resolver tres incidentes simulados",
-  "topic": "Backend",
-  "difficulty": "BEGINNER",
-  "templates": ["API_URL", "DB_AUTH", "PERMISSIONS"]
-}
-```
-
-El taller se publica inmediatamente. `PATCH /api/instructor/workshops/{id}` recibe `title`, `description`, `topic`, `difficulty` y `published`. El propietario consulta talleres despublicados en la ruta de instructor. Despublicar impide iniciar intentos nuevos; los existentes conservan historial y pueden finalizarse.
-
-Crear un grupo con `{ "name": "Grupo Backend 1" }`. Añadir un estudiante registrado con `userId` en `/members` o `email` en `/members/by-email`. Asignar un taller:
-
-```json
-{
-  "workshopId": "10000000-0000-0000-0000-000000000001",
-  "dueAt": "2030-12-15T23:59:00-05:00"
-}
-```
-
-`dueAt` debe ser una fecha futura en formato ISO 8601 y con zona horaria. El alumno consulta `/api/assignments` y comienza mediante `/api/assignments/{id}/attempts` con `{ "scenarioId": "<UUID>" }`. Las acciones y el cierre usan el mismo simulador; el servidor establece la asociación con la tarea.
-
-### Reglas de grupos, plazos y privacidad
-
-- Solo el propietario administra el grupo. El alumno no recibe correos de compañeros.
-- Un grupo archivado impide añadir alumnos, asignar talleres e iniciar intentos asignados. `PATCH` con `name` y `archived=false` lo reactiva.
-- Solo un estudiante miembro inicia un intento asignado. El escenario pertenece al taller y el plazo debe seguir vigente.
-- Cambiar plazo: `PATCH /api/assignments/{id}` con `dueAt`. `DELETE` cancela sin borrar historial. Un mismo taller tiene una asignación por grupo, incluso cancelada.
-- Un intento ya iniciado puede terminar después del plazo, archivado o cancelación. La lista de entregas calcula `late` respecto al plazo actual; al ampliarlo puede cambiar ese indicador.
-- Retirar un alumno corta acceso al grupo y a nuevas tareas; conserva sus intentos. El instructor mantiene acceso a entregas anteriores. Estadísticas y CSV del grupo consideran miembros actuales.
-- El instructor revisa solo intentos finalizados vinculados explícitamente a su asignación; las prácticas personales no son entregas del grupo.
-
-### Materiales, reportes y avisos
-
-Carga local: `multipart/form-data`, campo `file`, nombre como `guia.pdf`, máximo 10 MiB. Verifica nombre y cabecera `%PDF-`, sin análisis antivirus ni validación exhaustiva del PDF. Los bytes se guardan en PostgreSQL. La descarga requiere token; su `downloadUrl` local es una ruta relativa autenticada. Retirar oculta el material y elimina sus bytes locales.
-
-S3: solicitar URL → subir PDF → confirmar → descargar. La confirmación valida tamaño y tipo MIME. Retirar material S3 lo oculta en la aplicación sin borrar el objeto externo. Un enlace firmado ya emitido puede seguir válido durante sus cinco minutos.
-
-Reportes: POST devuelve `202` y un ID; consultar hasta `SUCCEEDED`, después descargar CSV. El trabajador intenta hasta tres veces; `/retry` reinicia solo un trabajo propio en `FAILED`. Las celdas CSV se protegen frente a interpretación como fórmulas.
-
-Al asignar un taller se notifican los estudiantes presentes. En ejecución local estándar SMTP está desactivado: los trabajos de correo terminan en `FAILED` tras reintentos, sin impedir el aviso interno ni la asignación. No se informa de un correo enviado si no se entregó al proveedor.
-
-## 7. Seguridad y consistencia
-
-- BCrypt; tokens aleatorios de 256 bits almacenados como SHA-256, vigentes ocho horas y revocables al salir.
-- El registro no permite elegir rol; el instructor inicial se configura por entorno. Un intento ajeno responde 404.
-- Acciones y cierre bloquean la fila (`SELECT FOR UPDATE`). Estado, eventos y evaluación se guardan en transacciones; si falla insertar un evento se revierte el cambio de estado.
-- Idempotencia: misma clave y acción devuelven el evento previo; otra acción con esa clave responde 409.
-- La finalización concurrente produce una evaluación. Eventos ordenados con índice persistido.
-- SQL parametrizado; validación de campos, UUID y paginación; rechazo de propiedades desconocidas; CORS configurable.
-
-## 8. Pruebas y evidencia
+## Pruebas y calidad
 
 ```powershell
-# Suite completa con H2 en modo PostgreSQL
-.\mvnw.cmd verify
-# Núcleo y transacciones
-.\mvnw.cmd '-Dtest=CoreContractTest,SimulationEngineTest,TransactionRollbackTest' test
-# Ampliación
-.\mvnw.cmd '-Dtest=ExpandedModulesTest' test
-```
-
-Para PostgreSQL utiliza una base exclusiva de pruebas:
-
-```powershell
-$env:TEST_DB_URL='jdbc:postgresql://127.0.0.1:5432/deploylab_test'
-$env:TEST_DB_USER='deploylab'
-$env:TEST_DB_PASSWORD='<clave de pruebas>'
 .\mvnw.cmd verify
 ```
 
-Las pruebas insertan datos ficticios; no apuntes a una base de uso real. Flyway aplica el esquema. Reportes: `target/surefire-reports`; cobertura: `target/site/jacoco/index.html`.
+La suite cubre contratos HTTP, JWT y rotación, roles, idempotencia, concurrencia, rollback, evaluación, grupos, plazos, privacidad, archivos e integraciones simuladas. Puede ejecutarse con H2 en modo PostgreSQL o con PostgreSQL mediante `TEST_DB_URL`, `TEST_DB_USER` y `TEST_DB_PASSWORD`. JaCoCo genera `target/site/jacoco/index.html`; la medición anterior a esta alineación superaba 80 % de instrucciones. La CI levanta PostgreSQL 17, ejecuta `verify` y conserva reportes y cobertura como artefactos.
 
-Verificación final: **39 pruebas aprobadas en H2 y 39 en PostgreSQL 17**, sin fallos ni omisiones. La demo HTTP del núcleo y de los módulos ampliados también pasó, junto con las 16 solicitudes y 23 comprobaciones de Postman. Swagger expone 7 rutas en core y 44 en modules. Evidencias: `11-modules-h2.txt`, `12-modules-postgres.txt` y `13-modules-http.txt`.
+La colección raíz `postman_collection.json` usa variables para URL, JWT e identificadores. La documentación OpenAPI permite explorar y probar todas las rutas desde Swagger.
 
-Se prueban credenciales/roles, catálogo, motor, puntuación, pistas, idempotencia, privacidad, concurrencia, rollback, grupos, asignaciones, publicación, materiales, avisos, trabajos e integraciones simuladas. `docs/evidence` conserva resultados históricos RED/GREEN y la verificación de esta ampliación. Guion: `docs/ENTREGA.md`.
+## Gestión del proyecto
 
-La colección `docs/DeployLab.postman_collection.json` verifica el núcleo en orden. `Demo-Modules.ps1` verifica por HTTP instructor → alumno → asignación → entrega → reporte. La CI está preparada con PostgreSQL, pero no se ha ejecutado en un remoto.
+El historial de Git conserva cambios pequeños y revisables, incluidos ciclos RED/GREEN donde una prueba reproduce una falla antes de aplicar la corrección. `git log --oneline --reverse` muestra la evolución. La rama `feat/rubric-alignment` separa JPA, JWT, errores, eventos y DTO/roles en commits distintos. GitHub Actions valida cada push y pull request.
 
-## 9. Historial técnico y evidencias
+Antes de entregar deben completarse los nombres del equipo y registrar en GitHub los issues, responsables y milestones usados durante el trabajo. El repositorio público es [tomlaura-bit/deploylab-backend](https://github.com/tomlaura-bit/deploylab-backend).
 
-```powershell
-git log --oneline --reverse
-git show 0337c10
-git show d461463
-git show 6264588
-git show e20f74f
-git show 5152675
-git show d62bc9e
-```
+## Límites y trabajo futuro
 
-El historial conserva etapas RED/GREEN del desarrollo. Los commits `0337c10` y `6264588` agregan pruebas antes de sus respectivas implementaciones; `d461463` y `e20f74f` incorporan los cambios que las hacen pasar. `5152675` reproduce la ausencia de carga PDF local y la inclusión incorrecta de prácticas personales en estadísticas; `d62bc9e` implementa la ampliación corregida.
+El backend no incluye frontend, recuperación de contraseña, verificación de correo ni administración general de roles. Los escenarios usan plantillas seguras y no ejecutan código arbitrario. El PDF local valida tamaño, nombre y cabecera, pero no incorpora antivirus. S3 y SMTP tienen manejo de indisponibilidad y pruebas con dobles; requieren credenciales externas para una validación real.
 
-El archivo bundle incluido permite clonar el historial completo sin depender de un servidor Git remoto:
+El siguiente crecimiento razonable es completar el uso de repositorios JPA en todos los servicios, desplegar en Render o AWS con PostgreSQL administrado, guardar secretos en el proveedor, añadir observabilidad y construir el cliente web. La implementación actual prioriza un núcleo transaccional reproducible y deja esas extensiones aisladas.
 
-```text
-git clone DeployLab_Backend_Historial.bundle deploylab-con-historial
-```
+## Licencia y referencias
 
-## 10. Configuración y límites actuales
+Uso académico para el curso DBP 2026-2. El equipo conserva los derechos; no se autoriza redistribución comercial sin permiso.
 
-| Variable | Uso |
-|---|---|
-| `DB_URL`, `DB_USER`, `DB_PASSWORD` | PostgreSQL |
-| `PORT` | HTTP, 8080 por defecto |
-| `EXTRAS_ENABLED` | Módulos ampliados, `true` por defecto |
-| `INSTRUCTOR_EMAIL`, `INSTRUCTOR_PASSWORD` | Instructor inicial si no existe |
-| `CORS_ORIGIN` | Origen permitido; `http://localhost:5173` por defecto |
-| `MAIL_ENABLED`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTH`, `SMTP_TLS`, `MAIL_FROM` | Correo opcional |
-| `S3_BUCKET`, `AWS_REGION` | S3 opcional; credenciales por la cadena estándar del SDK AWS |
-
-Con una base existente, configura las variables y ejecuta `./mvnw.cmd spring-boot:run`. Con Docker Desktop, copia `.env.example` a `.env`, configura credenciales y ejecuta `docker compose up --build`. El archivo Compose incluye PostgreSQL y Mailpit para capturar correo localmente.
-
-El backend cubre los flujos académicos descritos. SMTP y S3 tienen pruebas con dobles de servicio y casos de indisponibilidad, sin validación de una cuenta externa real. Quedan fuera frontend, recuperación de contraseña, verificación de correo, administración general de roles, editor libre de escenarios y preparación operativa para alta carga. PDF en PostgreSQL simplifica la entrega local; S3 permite separar archivos al crecer el volumen.
+Referencias: [Spring Boot](https://docs.spring.io/spring-boot/), [Spring Security](https://docs.spring.io/spring-security/reference/), [Spring Data JPA](https://docs.spring.io/spring-data/jpa/reference/), [Flyway](https://documentation.red-gate.com/fd), [JWT RFC 7519](https://www.rfc-editor.org/rfc/rfc7519), [PostgreSQL](https://www.postgresql.org/docs/) y [OpenAPI](https://spec.openapis.org/oas/latest.html).
