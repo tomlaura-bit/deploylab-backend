@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 public class DashboardController {
     private final Db db;private final AttemptService attempts;
     public DashboardController(Db db,AttemptService attempts) {this.db=db;this.attempts=attempts;}
-    @GetMapping("/api/dashboard") public Object dashboard(@AuthenticationPrincipal AuthService.Actor user) {
+    @GetMapping({"/api/dashboard","/api/v1/dashboard"}) public Object dashboard(@AuthenticationPrincipal AuthService.Actor user) {
         var result=new LinkedHashMap<String,Object>(); result.put("role",user.role());
         result.put("practice",db.one("SELECT COUNT(*) AS attempts,COALESCE(SUM(CASE WHEN finalized=TRUE THEN 1 ELSE 0 END),0) AS finalized,COALESCE(SUM(CASE WHEN finalized=TRUE AND state='RESOLVED' THEN 1 ELSE 0 END),0) AS solved,COALESCE(MAX(CASE WHEN finalized=TRUE THEN score END),0) AS best_score FROM attempt WHERE user_id=?",user.id()));
         result.put("unreadNotifications",db.scalar("SELECT COUNT(*) FROM notification WHERE user_id=? AND read_at IS NULL",Long.class,user.id()));

@@ -27,7 +27,7 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source=new UrlBasedCorsConfigurationSource(); source.registerCorsConfiguration("/**",cors);
         http.csrf(c->c.disable()).cors(c->c.configurationSource(source))
             .sessionManagement(s->s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(a->a.requestMatchers(HttpMethod.POST,"/api/auth/register","/api/auth/login","/api/auth/refresh","/auth/register","/auth/login","/auth/refresh","/login").permitAll()
+            .authorizeHttpRequests(a->a.requestMatchers(HttpMethod.POST,"/api/auth/register","/api/auth/login","/api/auth/refresh","/api/v1/auth/register","/api/v1/auth/login","/api/v1/auth/refresh","/auth/register","/auth/login","/auth/refresh","/login","/api/v1/login").permitAll()
                 .requestMatchers("/actuator/health","/swagger-ui/**","/swagger-ui.html","/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated())
             .exceptionHandling(e->e.authenticationEntryPoint((req,res,ex)->json(mapper,req,res,401,"Unauthorized","Autenticación requerida"))
