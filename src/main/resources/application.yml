@@ -5,6 +5,10 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/deploylab}
     username: ${DB_USER:deploylab}
     password: ${DB_PASSWORD:deploylab}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
   servlet:
     multipart:
       max-file-size: 10MB
@@ -41,3 +45,6 @@ app:
   s3-bucket: ${S3_BUCKET:}
   s3-region: ${AWS_REGION:us-east-1}
   jobs-delay: 1000
+  jwt-secret: ${JWT_SECRET:deploylab-local-development-secret-change-before-production-2026}
+  jwt-access-minutes: ${JWT_ACCESS_MINUTES:15}
+  jwt-refresh-days: ${JWT_REFRESH_DAYS:7}
