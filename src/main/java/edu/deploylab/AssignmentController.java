@@ -10,7 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 
-@RestController @RequestMapping("/api/assignments")
+@RestController @RequestMapping({"/api/assignments","/api/v1/assignments"})
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
 public class AssignmentController {
     public record Deadline(@NotNull @Future OffsetDateTime dueAt) {}

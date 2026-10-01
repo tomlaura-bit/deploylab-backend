@@ -6,8 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*;
 
@@ -45,11 +46,14 @@ class ExternalIntegrationsTest {
         assertThatThrownBy(()->materials.confirm(w,(UUID)result.get("id"),t)).isInstanceOf(ApiException.class);
         assertThat((List<?>)materials.list(w)).isEmpty();
     }
-    @Test void successfulMailMarksJobSucceeded() {
+    @Test void successfulMailMarksJobSucceeded() throws Exception {
         var t=teacher();UUID job=jobs.enqueue(t.id(),"EMAIL","Nueva asignación");
+        var message=new MimeMessage(Session.getInstance(new Properties()));
+        when(mail.createMimeMessage()).thenReturn(message);
         worker.tick();
         assertThat(db.one("SELECT state FROM background_job WHERE id=?",job).get("state")).isEqualTo("SUCCEEDED");
-        verify(mail,atLeastOnce()).send(any(SimpleMailMessage.class));
+        verify(mail,atLeastOnce()).send(message);
+        assertThat(message.getContentType()).containsIgnoringCase("text/html");
     }
     @Test void anotherInstructorCannotUploadToAnExistingWorkshop() {
         var t=teacher();UUID w=catalog.create(t,new CatalogService.CreateWorkshop("Private owner","Description","Topic","BEGINNER",List.of("API_URL")));

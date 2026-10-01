@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 
-@RestController @RequestMapping("/api/instructor/workshops")
+@RestController @RequestMapping({"/api/instructor/workshops","/api/v1/instructor/workshops"})
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
 public class InstructorController {
     public record Edit(@NotBlank @Size(max=150) String title,@NotBlank @Size(max=2000) String description,

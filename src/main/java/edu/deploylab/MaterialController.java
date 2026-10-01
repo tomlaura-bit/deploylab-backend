@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.*;
 import org.springframework.web.multipart.MultipartFile;
 
-@RestController @RequestMapping("/api/workshops/{workshop}/materials")
+@RestController @RequestMapping({"/api/workshops/{workshop}/materials","/api/v1/workshops/{workshop}/materials"})
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
 public class MaterialController {
     public record Upload(@NotBlank @Pattern(regexp="[a-zA-Z0-9_-]{1,100}\\.pdf") String filename) {}

@@ -6,7 +6,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping({"/auth","/api/auth"})
+@RequestMapping({"/auth","/api/auth","/api/v1/auth"})
 public class AuthController {
     private final AuthService auth; private final ApiMapper mapper;
     public AuthController(AuthService auth,ApiMapper mapper) {this.auth=auth;this.mapper=mapper;}

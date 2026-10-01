@@ -107,4 +107,12 @@ class CoreContractTest {
         assertThat(result.get("evaluation").get("mistakes").asInt()).isEqualTo(1);
         assertThat(result.get("events").size()).isEqualTo(1);
     }
+    @Test void versionedApiPreservesTheCoreContractAndAddsNavigationLinks() throws Exception {
+        String email=UUID.randomUUID()+"@versioned.test";
+        call("POST","/api/v1/auth/register",Map.of("name","Versioned","email",email,"password","Versioned123!"),null,201,null);
+        String token=call("POST","/api/v1/auth/login",Map.of("email",email,"password","Versioned123!"),null,200,null).get("token").asText();
+        var workshops=call("GET","/api/v1/talleres",null,token,200,null);
+        assertThat(workshops.isArray()).isTrue();
+        assertThat(workshops.get(0).get("_links").get("self").get("href").asText()).startsWith("/api/v1/talleres/");
+    }
 }

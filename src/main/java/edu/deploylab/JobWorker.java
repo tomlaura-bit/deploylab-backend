@@ -3,18 +3,18 @@ package edu.deploylab;
 import java.time.*;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.extras-enabled",havingValue="true")
 public class JobWorker {
-    private final Db db; private final JavaMailSender mail;
+    private final Db db; private final JavaMailSender mail; private final EmailTemplateService templates;
     @Value("${app.mail-enabled}") boolean mailEnabled;
     @Value("${app.mail-from}") String from;
-    public JobWorker(Db db,JavaMailSender mail) {this.db=db;this.mail=mail;}
+    public JobWorker(Db db,JavaMailSender mail,EmailTemplateService templates) {this.db=db;this.mail=mail;this.templates=templates;}
     @Scheduled(fixedDelayString="${app.jobs-delay}",initialDelayString="${app.jobs-delay}")
     public void tick() {
         db.update("DELETE FROM auth_token WHERE expires_at<CURRENT_TIMESTAMP");
@@ -34,11 +34,20 @@ public class JobWorker {
     }
     String process(Map<String,Object> job) {
         String kind=job.get("kind").toString(); UUID owner=Db.id(job,"owner_id");
-        if(kind.equals("EMAIL")) {
+        if(kind.equals("EMAIL") || kind.equals("WELCOME_EMAIL")) {
             if(!mailEnabled) throw new IllegalStateException("SMTP no habilitado");
             var user=db.one("SELECT email FROM app_user WHERE id=?",owner);
-            var message=new SimpleMailMessage(); message.setFrom(from); message.setTo(user.get("email").toString());
-            message.setSubject("DeployLab: nuevo taller");message.setText(job.get("payload").toString());mail.send(message);
+            var message=mail.createMimeMessage();
+            try {
+                var helper=new MimeMessageHelper(message,"UTF-8");
+                String title=kind.equals("WELCOME_EMAIL")?"Bienvenido a DeployLab":"Nuevo taller asignado";
+                helper.setFrom(from); helper.setTo(user.get("email").toString()); helper.setSubject("DeployLab: "+title);
+                helper.setText(templates.notification(title,job.get("payload").toString()),true);
+                message.saveChanges();
+            } catch(jakarta.mail.MessagingException exception) {
+                throw new IllegalStateException("No se pudo preparar el correo",exception);
+            }
+            mail.send(message);
             return "Entregado al servidor SMTP";
         }
         List<Map<String,Object>> rows;
