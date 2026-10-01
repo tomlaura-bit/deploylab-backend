@@ -1,8 +1,8 @@
 package edu.deploylab;
 
-public class ApiException extends RuntimeException {
-    public final int status;
-    public ApiException(int status, String message) { super(message); this.status = status; }
-    public static ApiException missing() { return new ApiException(404, "Recurso no encontrado"); }
-    public static ApiException forbidden() { return new ApiException(403, "No tienes permiso para esta operación"); }
+/** Compatibility exception for older service paths; new code uses specific subclasses. */
+public class ApiException extends DeployLabException {
+    public ApiException(int status,String message){super(status,message);}
+    public static DeployLabException missing(){return new ResourceNotFoundException();}
+    public static DeployLabException forbidden(){return new ForbiddenOperationException();}
 }

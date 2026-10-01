@@ -44,7 +44,7 @@ public class AuthService {
         validatePassword(r.password());
         var users=db.jdbc.queryForList("SELECT * FROM app_user WHERE email=?",r.email().trim().toLowerCase(Locale.ROOT));
         String hash=users.isEmpty()?dummyHash:users.getFirst().get("password_hash").toString();
-        if (!passwords.matches(r.password(),hash) || users.isEmpty()) throw new ApiException(401,"Credenciales inválidas");
+        if (!passwords.matches(r.password(),hash) || users.isEmpty()) throw new InvalidCredentialsException("Credenciales inválidas");
         var u=actor(users.getFirst());
         return issueSession(u);
     }
@@ -64,7 +64,7 @@ public class AuthService {
     public Session refresh(Refresh r) {
         String hash=digest(r.refreshToken());
         var rows=db.jdbc.queryForList("SELECT u.* FROM app_user u JOIN refresh_token t ON t.user_id=u.id WHERE t.token_hash=? AND t.revoked=FALSE AND t.expires_at>CURRENT_TIMESTAMP FOR UPDATE",hash);
-        if(rows.isEmpty()) throw new ApiException(401,"Refresh token inválido o vencido");
+        if(rows.isEmpty()) throw new InvalidCredentialsException("Refresh token inválido o vencido");
         var user=actor(rows.getFirst());
         db.jdbc.update("UPDATE refresh_token SET revoked=TRUE WHERE token_hash=?",hash);
         return issueSession(user);
@@ -86,7 +86,7 @@ public class AuthService {
     }
     static Actor actor(Map<String,Object> u) { return new Actor(Db.id(u,"id"),u.get("name").toString(),u.get("email").toString(),u.get("role").toString()); }
     static void validatePassword(String password) {
-        if(password.getBytes(StandardCharsets.UTF_8).length>72) throw new ApiException(400,"La contraseña supera 72 bytes");
+        if(password.getBytes(StandardCharsets.UTF_8).length>72) throw new InvalidRequestException("La contraseña supera 72 bytes");
     }
     static String digest(String token) {
         try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8))); }

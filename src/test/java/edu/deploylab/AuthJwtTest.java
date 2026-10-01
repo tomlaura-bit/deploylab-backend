@@ -46,4 +46,11 @@ class AuthJwtTest {
         mvc.perform(get("/auth/me").header("Authorization","Bearer "+access)).andExpect(status().isUnauthorized());
         postJson("/auth/refresh",Map.of("refreshToken",session.get("refreshToken").asText()),401);
     }
+
+    @Test void errorsUseOneDocumentedShape() throws Exception {
+        var response=postJson("/auth/login",Map.of("email","invalid","password","short"),400);
+        assertThat(response.fieldNames()).toIterable().containsExactlyInAnyOrder(
+            "timestamp","status","error","message","path");
+        assertThat(response.get("path").asText()).isEqualTo("/auth/login");
+    }
 }

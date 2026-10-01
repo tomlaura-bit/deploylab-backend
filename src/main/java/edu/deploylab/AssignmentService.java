@@ -32,7 +32,7 @@ public class AssignmentService {
         var g=db.one("SELECT * FROM study_group WHERE id=? FOR UPDATE",a.get("group_id"));
         groups.member(Db.id(a,"group_id"),user);
         if(Boolean.TRUE.equals(a.get("cancelled")) || Boolean.TRUE.equals(g.get("archived"))) throw new ApiException(409,"La asignación está cerrada");
-        if(db.exists("SELECT 1 FROM assignment WHERE id=? AND due_at<CURRENT_TIMESTAMP",id)) throw new ApiException(409,"La fecha límite ha vencido");
+        if(db.exists("SELECT 1 FROM assignment WHERE id=? AND due_at<CURRENT_TIMESTAMP",id)) throw new ExpiredAssignmentException();
         if(!db.exists("SELECT 1 FROM scenario WHERE id=? AND workshop_id=?",scenario,a.get("workshop_id"))) throw new ApiException(400,"El escenario no pertenece al taller asignado");
         UUID attempt=attempts.start(user,scenario);
         db.jdbc.update("UPDATE attempt SET assignment_id=? WHERE id=?",id,attempt); return attempt;

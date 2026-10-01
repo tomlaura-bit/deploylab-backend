@@ -18,7 +18,7 @@ public class S3Storage {
         try(var signer=S3Presigner.builder().region(Region.of(region)).build()) {
             var req=PutObjectRequest.builder().bucket(bucket).key(key).contentType("application/pdf").build();
             return signer.presignPutObject(r->r.signatureDuration(Duration.ofMinutes(5)).putObjectRequest(req)).url().toString();
-        } catch(SdkException e) {throw new ApiException(503,"No se pudo generar el acceso al almacenamiento");}
+        } catch(SdkException e) {throw new StorageException("No se pudo generar el acceso al almacenamiento");}
     }
     public void verifyUpload(String key) {
         enabled();
@@ -29,15 +29,15 @@ public class S3Storage {
         } catch(NoSuchKeyException e) {throw new ApiException(409,"El archivo aún no se ha subido");}
         catch(S3Exception e) {
             if(e.statusCode()==404) throw new ApiException(409,"El archivo aún no se ha subido");
-            throw new ApiException(503,"No se pudo verificar el archivo");
-        } catch(SdkException e) {throw new ApiException(503,"No se pudo acceder al almacenamiento");}
+            throw new StorageException("No se pudo verificar el archivo");
+        } catch(SdkException e) {throw new StorageException("No se pudo acceder al almacenamiento");}
     }
     public String downloadUrl(String key) {
         enabled();
         try(var signer=S3Presigner.builder().region(Region.of(region)).build()) {
             var req=GetObjectRequest.builder().bucket(bucket).key(key).responseContentDisposition("attachment").build();
             return signer.presignGetObject(r->r.signatureDuration(Duration.ofMinutes(5)).getObjectRequest(req)).url().toString();
-        } catch(SdkException e) {throw new ApiException(503,"No se pudo generar el acceso al archivo");}
+        } catch(SdkException e) {throw new StorageException("No se pudo generar el acceso al archivo");}
     }
-    private void enabled() {if(bucket.isBlank()) throw new ApiException(503,"Almacenamiento S3 no configurado");}
+    private void enabled() {if(bucket.isBlank()) throw new StorageException("Almacenamiento S3 no configurado");}
 }
