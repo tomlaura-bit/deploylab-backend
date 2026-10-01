@@ -14,6 +14,8 @@ public class AuthController {
     public AuthService.Actor register(@Valid @RequestBody AuthService.Register body) { return auth.register(body); }
     @PostMapping("/login") @io.swagger.v3.oas.annotations.security.SecurityRequirements
     public AuthService.Session login(@Valid @RequestBody AuthService.Login body) { return auth.login(body); }
+    @PostMapping("/refresh") @io.swagger.v3.oas.annotations.security.SecurityRequirements
+    public AuthService.Session refresh(@Valid @RequestBody AuthService.Refresh body) { return auth.refresh(body); }
     @GetMapping("/me") public AuthService.Actor me(@AuthenticationPrincipal AuthService.Actor user) { return user; }
     @PostMapping("/logout") @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
     public void logout(@RequestHeader("Authorization") String token) { auth.logout(token.substring(7)); }

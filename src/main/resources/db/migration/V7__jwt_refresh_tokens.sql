@@ -1,0 +1,8 @@
+CREATE TABLE refresh_token (
+ token_hash VARCHAR(64) PRIMARY KEY,
+ user_id UUID NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+ expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+ revoked BOOLEAN NOT NULL DEFAULT FALSE,
+ created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_refresh_token_expiry ON refresh_token(expires_at);
