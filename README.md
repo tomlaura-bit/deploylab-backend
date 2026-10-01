@@ -134,7 +134,22 @@ Con Docker, copia `.env.example` a `.env`, cambia secretos y ejecuta `docker com
 
 ## Despliegue
 
+### Entornos disponibles
+
+| Entorno | API | Swagger | Estado |
+|---|---|---|---|
+| Render | [deploylab-api.onrender.com](https://deploylab-api.onrender.com) | [Swagger en Render](https://deploylab-api.onrender.com/swagger-ui/index.html) | Permanente mientras el servicio y la base de datos estén activos |
+| AWS Academy EC2 | [54.83.116.203](http://54.83.116.203) | [Swagger en AWS](http://54.83.116.203/swagger-ui/index.html) | Temporal; depende de la sesión del laboratorio |
+
+La API de Render usa PostgreSQL 17 administrado. El 1 de octubre de 2026 se verificaron públicamente `/actuator/health`, Swagger, registro, login y catálogo autenticado. La primera petición puede tardar mientras Render activa el servicio.
+
+El entorno de AWS corre en la instancia EC2 `i-03398b521683c8115`, región `us-east-1`, con PostgreSQL 17 y la API en contenedores separados. En AWS CloudShell se verificaron `GET /actuator/health` con estado `UP`, Swagger con HTTP 200, registro con HTTP 201, emisión de JWT y `GET /talleres` con HTTP 200. La IP pública puede cambiar al reiniciar la instancia y los recursos pueden desaparecer al finalizar o restablecer el laboratorio de AWS Academy. Algunas redes institucionales bloquean direcciones HTTP sin dominio; en ese caso se puede probar Render o ejecutar las comprobaciones desde CloudShell.
+
+### Render
+
 `render.yaml` define un Blueprint con la API Docker y PostgreSQL 17 administrado. Render obtiene por separado host, puerto, base, usuario y contraseña, mientras genera los secretos de JWT y del instructor. Después de conectar este repositorio en **New → Blueprint**, la comprobación pública queda en `/actuator/health` y Swagger en `/swagger-ui/index.html`.
+
+### AWS Academy
 
 Para AWS Academy, una instancia EC2 con Amazon Linux 2023 puede usar `scripts/aws-ec2-user-data.sh` como *user data*. El script instala Docker, clona la rama principal pública, genera secretos dentro del servidor, levanta PostgreSQL en una red privada de Docker, construye la API y publica únicamente el puerto HTTP 80. Los datos quedan en el volumen `deploylab-postgres-data`; el registro de arranque se guarda en `/var/log/deploylab-bootstrap.log`. El grupo de seguridad de la instancia debe permitir TCP 80 desde la dirección desde la que se probará la API.
 
