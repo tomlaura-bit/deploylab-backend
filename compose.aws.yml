@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: deploylab
+      POSTGRES_USER: deploylab
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - deploylab-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deploylab -d deploylab"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  api:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "80:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/deploylab
+      DB_USER: deploylab
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      INSTRUCTOR_EMAIL: ${INSTRUCTOR_EMAIL:-instructor@deploylab.app}
+      INSTRUCTOR_PASSWORD: ${INSTRUCTOR_PASSWORD}
+      CORS_ORIGIN: "*"
+      EXTRAS_ENABLED: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  deploylab-data:

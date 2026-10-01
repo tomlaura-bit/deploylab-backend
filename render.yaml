@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: deploylab-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: deploylab-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: deploylab-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: deploylab-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: deploylab-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: deploylab-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: INSTRUCTOR_EMAIL
+        value: instructor@deploylab.app
+      - key: INSTRUCTOR_PASSWORD
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: EXTRAS_ENABLED
+        value: "true"
+
+databases:
+  - name: deploylab-db
+    plan: free
+    region: oregon
+    databaseName: deploylab
+    user: deploylab
+    postgresMajorVersion: "17"
+    ipAllowList: []
